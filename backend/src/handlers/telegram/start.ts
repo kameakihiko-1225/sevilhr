@@ -219,7 +219,12 @@ export async function handleStart(ctx: Context) {
                     leadUser = await prisma.user.findUnique({
                       where: { id: mergedUser.id },
                     });
-                    console.log(`[handleStart] ✅ Merged conflicting users successfully`);
+                    
+                    if (!leadUser) {
+                      throw new Error(`Failed to find merged user ${mergedUser.id}`);
+                    }
+                    
+                    console.log(`[handleStart] ✅ Merged conflicting users successfully. Final user: ${leadUser.id}, telegramId: ${leadUser.telegramId || 'none'}`);
                   } catch (mergeError) {
                     console.error(`[handleStart] ❌ Error merging conflicting users:`, mergeError);
                     leadUser = lead.user; // Use the lead's user as-is
