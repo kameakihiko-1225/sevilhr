@@ -181,7 +181,8 @@ HRSEVIL/
 - `BACKEND_PORT` or `PORT` - Backend server port (default: 3001)
 
 ### Frontend
-- `NEXT_PUBLIC_API_URL` - Backend API URL
+- `BACKEND_URL` - Backend URL for Next.js server-side rewrites (used to proxy `/api/*` requests). In Docker, use `http://backend:3001` (service name). In local dev, defaults to `http://localhost:3001` if not set.
+- `NEXT_PUBLIC_API_URL` - Backend API URL (for client-side usage if needed)
 - `NEXT_PUBLIC_TELEGRAM_BOT_URL` - Telegram bot URL
 - `NEXT_PUBLIC_DEFAULT_LOCALE` - Default locale (uz/en/ru)
 

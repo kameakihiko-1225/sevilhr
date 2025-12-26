@@ -80,6 +80,10 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # BACKEND_URL is used by Next.js server-side rewrites to proxy /api/* requests
+      # Use Docker service name 'backend' instead of 'localhost' for container networking
+      BACKEND_URL: http://backend:3001
+      # NEXT_PUBLIC_API_URL is kept for backward compatibility (client-side usage if needed)
       NEXT_PUBLIC_API_URL: http://localhost:3001
       NEXT_PUBLIC_TELEGRAM_BOT_URL: ${NEXT_PUBLIC_TELEGRAM_BOT_URL}
       NEXT_PUBLIC_DEFAULT_LOCALE: uz
