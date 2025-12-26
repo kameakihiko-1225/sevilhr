@@ -13,9 +13,11 @@ datasource db {
 enum LeadStatus {
   PARTIAL
   FULL
+  FULL_WITHOUT_TELEGRAM
   RETURNING
   ACCEPTED
   REJECTED
+  DID_NOT_CLICK_SUBMIT_BUTTON
 }
 
 model User {

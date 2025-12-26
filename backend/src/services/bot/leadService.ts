@@ -4,6 +4,34 @@ import { prisma } from '../../utils/prisma';
 
 const GROUP_ID = process.env.TELEGRAM_GROUP_ID || '';
 
+/**
+ * Escape Markdown special characters to prevent parsing errors
+ */
+function escapeMarkdown(text: string): string {
+  if (!text) return '';
+  // Escape Markdown special characters: _ * [ ] ( ) ~ ` > # + - = | { } . !
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/_/g, '\\_')
+    .replace(/\*/g, '\\*')
+    .replace(/\[/g, '\\[')
+    .replace(/\]/g, '\\]')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+    .replace(/~/g, '\\~')
+    .replace(/`/g, '\\`')
+    .replace(/>/g, '\\>')
+    .replace(/#/g, '\\#')
+    .replace(/\+/g, '\\+')
+    .replace(/-/g, '\\-')
+    .replace(/=/g, '\\=')
+    .replace(/\|/g, '\\|')
+    .replace(/\{/g, '\\{')
+    .replace(/\}/g, '\\}')
+    .replace(/\./g, '\\.')
+    .replace(/!/g, '\\!');
+}
+
 export async function sendLeadToGroup(
   bot: Bot,
   leadId: string
@@ -31,16 +59,16 @@ export async function sendLeadToGroup(
 
   console.log(`[sendLeadToGroup] Lead found: ${lead.id}, Status: ${lead.status}`);
 
-  // Send FULL and RETURNING leads to the group
-  if (lead.status !== LeadStatus.FULL && lead.status !== LeadStatus.RETURNING) {
-    console.log(`[sendLeadToGroup] Lead ${leadId} has status ${lead.status}, skipping (only FULL and RETURNING leads are sent)`);
+  // Send FULL, FULL_WITHOUT_TELEGRAM, RETURNING, and DID_NOT_CLICK_SUBMIT_BUTTON leads to the group
+  if (lead.status !== LeadStatus.FULL && lead.status !== LeadStatus.FULL_WITHOUT_TELEGRAM && lead.status !== LeadStatus.RETURNING && lead.status !== LeadStatus.DID_NOT_CLICK_SUBMIT_BUTTON) {
+    console.log(`[sendLeadToGroup] Lead ${leadId} has status ${lead.status}, skipping (only FULL, FULL_WITHOUT_TELEGRAM, RETURNING, and DID_NOT_CLICK_SUBMIT_BUTTON leads are sent)`);
     return;
   }
   
   console.log(`[sendLeadToGroup] Lead status is ${lead.status}, proceeding to send full data to group`);
 
   const telegramContact = lead.user.telegramId 
-    ? `\n📱 Telegram: @${lead.user.telegramUsername || lead.user.telegramId}`
+    ? `\n📱 Telegram: @${escapeMarkdown(lead.user.telegramUsername || lead.user.telegramId)}`
     : '';
 
   const companyTypeMap: Record<string, string> = {
@@ -85,6 +113,10 @@ export async function sendLeadToGroup(
   // Determine message prefix based on status
   const messagePrefix = lead.status === LeadStatus.RETURNING 
     ? `📋 *Returning Lead*` 
+    : lead.status === LeadStatus.FULL_WITHOUT_TELEGRAM
+    ? `📋 *New Lead - Without Telegram*`
+    : lead.status === LeadStatus.DID_NOT_CLICK_SUBMIT_BUTTON
+    ? `📋 *Lead - Did Not Click Submit Button*`
     : `📋 *New Lead*`;
   
   let message = `${messagePrefix}\n\n`;
@@ -239,35 +271,40 @@ export function formatRejectionMessageForGroup(
   };
 
   let message = `📋 *Lead - REJECTED*\n\n`;
-  message += `📍 Location: ${lead.location}\n`;
+  message += `📍 Location: ${escapeMarkdown(lead.location)}\n`;
   if (lead.companyType) {
-    message += `🏢 Company Type: ${companyTypeMap[lead.companyType as string] || lead.companyType}\n`;
+    const companyTypeText = companyTypeMap[lead.companyType as string] || lead.companyType;
+    message += `🏢 Company Type: ${escapeMarkdown(companyTypeText)}\n`;
   }
   if (lead.roleInCompany) {
-    message += `👔 Role: ${roleMap[lead.roleInCompany as string] || lead.roleInCompany}\n`;
+    const roleText = roleMap[lead.roleInCompany as string] || lead.roleInCompany;
+    message += `👔 Role: ${escapeMarkdown(roleText)}\n`;
   }
   if (lead.interests && lead.interests.length > 0) {
-    message += `🎯 Interests: ${lead.interests.map((i: string) => interestsMap[i] || i).join(', ')}\n`;
+    const interestsText = lead.interests.map((i: string) => interestsMap[i] || i).join(', ');
+    message += `🎯 Interests: ${escapeMarkdown(interestsText)}\n`;
   }
   if (lead.companyDescription) {
-    message += `📝 Description: ${lead.companyDescription}\n`;
+    message += `📝 Description: ${escapeMarkdown(lead.companyDescription)}\n`;
   }
   if (lead.annualTurnover) {
-    message += `💰 Annual Turnover: ${annualTurnoverMap[lead.annualTurnover as string] || lead.annualTurnover}\n`;
+    const turnoverText = annualTurnoverMap[lead.annualTurnover as string] || lead.annualTurnover;
+    message += `💰 Annual Turnover: ${escapeMarkdown(turnoverText)}\n`;
   }
   if (lead.numberOfEmployees) {
-    message += `👥 Employees: ${numberOfEmployeesMap[lead.numberOfEmployees as string] || lead.numberOfEmployees}\n`;
+    const employeesText = numberOfEmployeesMap[lead.numberOfEmployees as string] || lead.numberOfEmployees;
+    message += `👥 Employees: ${escapeMarkdown(employeesText)}\n`;
   }
-  message += `👤 Name: ${lead.fullName}\n`;
-  message += `📞 Phone: ${lead.phoneNumber}\n`;
+  message += `👤 Name: ${escapeMarkdown(lead.fullName)}\n`;
+  message += `📞 Phone: ${escapeMarkdown(lead.phoneNumber)}\n`;
   if (lead.companyName) {
-    message += `🏢 Company Name: ${lead.companyName}\n`;
+    message += `🏢 Company Name: ${escapeMarkdown(lead.companyName)}\n`;
   }
   if (lead.user.telegramId) {
-    message += `📱 Telegram: @${lead.user.telegramUsername || lead.user.telegramId}\n`;
+    message += `📱 Telegram: @${escapeMarkdown(lead.user.telegramUsername || lead.user.telegramId)}\n`;
   }
-  message += `❌ Rejected by: @${rejectedBy}\n`;
-  message += `📝 Reason: ${rejectionReason}`;
+  message += `❌ Rejected by: @${escapeMarkdown(rejectedBy)}\n`;
+  message += `📝 Reason: ${escapeMarkdown(rejectionReason)}`;
 
   return message;
 }
@@ -309,7 +346,7 @@ export async function updateLeadMessageWithTelegram(
     return;
   }
 
-  const telegramContact = `\n📱 Telegram: @${lead.user.telegramUsername || lead.user.telegramId}`;
+  const telegramContact = `\n📱 Telegram: @${escapeMarkdown(lead.user.telegramUsername || lead.user.telegramId)}`;
   console.log(`[updateLeadMessageWithTelegram] Will add Telegram contact: ${telegramContact.trim()}`);
 
   const companyTypeMap: Record<string, string> = {
@@ -358,41 +395,50 @@ export async function updateLeadMessageWithTelegram(
     ? `📋 *Lead - ACCEPTED*`
     : lead.status === LeadStatus.REJECTED
     ? `📋 *Lead - REJECTED*`
+    : lead.status === LeadStatus.FULL_WITHOUT_TELEGRAM
+    ? `📋 *New Lead - Without Telegram*`
+    : lead.status === LeadStatus.DID_NOT_CLICK_SUBMIT_BUTTON
+    ? `📋 *Lead - Did Not Click Submit Button*`
     : `📋 *New Lead*`;
 
   let message = `${messagePrefix}\n\n`;
-  message += `📍 Location: ${lead.location}\n`;
+  message += `📍 Location: ${escapeMarkdown(lead.location)}\n`;
   if (lead.companyType) {
-    message += `🏢 Company Type: ${companyTypeMap[lead.companyType] || lead.companyType}\n`;
+    const companyTypeText = companyTypeMap[lead.companyType] || lead.companyType;
+    message += `🏢 Company Type: ${escapeMarkdown(companyTypeText)}\n`;
   }
   if (lead.roleInCompany) {
-    message += `👔 Role: ${roleMap[lead.roleInCompany] || lead.roleInCompany}\n`;
+    const roleText = roleMap[lead.roleInCompany] || lead.roleInCompany;
+    message += `👔 Role: ${escapeMarkdown(roleText)}\n`;
   }
   if (lead.interests && lead.interests.length > 0) {
-    message += `🎯 Interests: ${lead.interests.map((i: string) => interestsMap[i] || i).join(', ')}\n`;
+    const interestsText = lead.interests.map((i: string) => interestsMap[i] || i).join(', ');
+    message += `🎯 Interests: ${escapeMarkdown(interestsText)}\n`;
   }
   if (lead.companyDescription) {
-    message += `📝 Description: ${lead.companyDescription}\n`;
+    message += `📝 Description: ${escapeMarkdown(lead.companyDescription)}\n`;
   }
   if (lead.annualTurnover) {
-    message += `💰 Annual Turnover: ${annualTurnoverMap[lead.annualTurnover] || lead.annualTurnover}\n`;
+    const turnoverText = annualTurnoverMap[lead.annualTurnover] || lead.annualTurnover;
+    message += `💰 Annual Turnover: ${escapeMarkdown(turnoverText)}\n`;
   }
   if (lead.numberOfEmployees) {
-    message += `👥 Employees: ${numberOfEmployeesMap[lead.numberOfEmployees] || lead.numberOfEmployees}\n`;
+    const employeesText = numberOfEmployeesMap[lead.numberOfEmployees] || lead.numberOfEmployees;
+    message += `👥 Employees: ${escapeMarkdown(employeesText)}\n`;
   }
-  message += `👤 Name: ${lead.fullName}\n`;
-  message += `📞 Phone: ${lead.phoneNumber}${telegramContact}\n`;
+  message += `👤 Name: ${escapeMarkdown(lead.fullName)}\n`;
+  message += `📞 Phone: ${escapeMarkdown(lead.phoneNumber)}${telegramContact}\n`;
   if (lead.companyName) {
-    message += `🏢 Company Name: ${lead.companyName}\n`;
+    message += `🏢 Company Name: ${escapeMarkdown(lead.companyName)}\n`;
   }
-  message += `📊 Status: ${lead.status}`;
+  message += `📊 Status: ${escapeMarkdown(lead.status)}`;
 
   // Add rejection/acceptance info if applicable
   if (lead.status === LeadStatus.REJECTED && lead.rejectedBy && lead.rejectionReason) {
-    message += `\n❌ Rejected by: @${lead.rejectedBy}\n`;
-    message += `📝 Reason: ${lead.rejectionReason}`;
+    message += `\n❌ Rejected by: @${escapeMarkdown(lead.rejectedBy)}\n`;
+    message += `📝 Reason: ${escapeMarkdown(lead.rejectionReason)}`;
   } else if (lead.status === LeadStatus.ACCEPTED && lead.acceptedBy) {
-    message += `\n✅ Accepted by: @${lead.acceptedBy}`;
+    message += `\n✅ Accepted by: @${escapeMarkdown(lead.acceptedBy)}`;
   }
 
   // Prepare keyboard - only show Accept/Reject if not already accepted/rejected

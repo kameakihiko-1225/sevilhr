@@ -41,6 +41,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
   const [currentStage, setCurrentStage] = useState(1);
   const [wantsTelegram, setWantsTelegram] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
   const { formData: sessionData, updateField, clearSession, hasRequiredFields, mounted } = useSession();
   const t = getTranslations(locale);
   
@@ -130,37 +132,165 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     });
   }, [formValues, sessionData, updateField, mounted]);
 
-  // Auto-submit after 2 minutes if required fields are filled
+  // Helper function to check if all form fields are filled (FULL form)
+  const isFullFormFilled = (): boolean => {
+    const location = formValues.location || sessionData.location;
+    const companyType = formValues.companyType || sessionData.companyType;
+    const roleInCompany = formValues.roleInCompany || sessionData.roleInCompany;
+    const interests = formValues.interests || sessionData.interests;
+    const companyDescription = formValues.companyDescription || sessionData.companyDescription;
+    const annualTurnover = formValues.annualTurnover || sessionData.annualTurnover;
+    const numberOfEmployees = formValues.numberOfEmployees || sessionData.numberOfEmployees;
+    const fullName = formValues.fullName || sessionData.fullName;
+    const phoneNumber = formValues.phoneNumber || sessionData.phoneNumber;
+
+    return !!(
+      location &&
+      companyType &&
+      roleInCompany &&
+      Array.isArray(interests) && interests.length > 0 &&
+      companyDescription &&
+      annualTurnover &&
+      numberOfEmployees &&
+      fullName &&
+      phoneNumber
+    );
+  };
+
+  // Track user activity to detect inactivity
   useEffect(() => {
-    if (!mounted || !hasRequiredFields) return;
+    if (!mounted || hasSubmitted) return;
+
+    const updateActivity = () => {
+      setLastActivityTime(Date.now());
+    };
+
+    // Track various user activities
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+    events.forEach(event => {
+      window.addEventListener(event, updateActivity, { passive: true });
+    });
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, updateActivity);
+      });
+    };
+  }, [mounted, hasSubmitted]);
+
+  // 30-second inactivity timer for FULL forms
+  useEffect(() => {
+    if (!mounted || hasSubmitted) return;
+    
+    const isFull = isFullFormFilled();
+    if (!isFull) return;
+
+    const inactivityTimer = setInterval(() => {
+      const timeSinceLastActivity = Date.now() - lastActivityTime;
+      
+      if (timeSinceLastActivity >= 30 * 1000) {
+        // 30 seconds of inactivity detected
+        const allData = {
+          location: (formValues.location || sessionData.location) as 'Toshkent shahri' | 'Boshqa viloyatda',
+          companyType: formValues.companyType || sessionData.companyType || '',
+          roleInCompany: formValues.roleInCompany || sessionData.roleInCompany || '',
+          interests: (formValues.interests || sessionData.interests || []) as string[],
+          companyDescription: formValues.companyDescription || sessionData.companyDescription || '',
+          annualTurnover: formValues.annualTurnover || sessionData.annualTurnover || '',
+          numberOfEmployees: formValues.numberOfEmployees || sessionData.numberOfEmployees || '',
+          fullName: formValues.fullName || sessionData.fullName || '',
+          phoneNumber: formValues.phoneNumber || sessionData.phoneNumber || '',
+          companyName: formValues.companyName || sessionData.companyName,
+        };
+        
+        submitForm(allData as FormData, 'DID_NOT_CLICK_SUBMIT_BUTTON', false);
+        clearInterval(inactivityTimer);
+      }
+    }, 1000); // Check every second
+
+    return () => clearInterval(inactivityTimer);
+  }, [mounted, hasSubmitted, lastActivityTime, formValues, sessionData]);
+
+  // Page leave detection for FULL forms
+  useEffect(() => {
+    if (!mounted || hasSubmitted) return;
+    
+    const isFull = isFullFormFilled();
+    if (!isFull) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Only submit if form is fully filled and user hasn't submitted yet
+      if (!hasSubmitted) {
+        // Use sendBeacon for reliable submission on page unload
+        const allData = {
+          location: (formValues.location || sessionData.location) as 'Toshkent shahri' | 'Boshqa viloyatda',
+          companyType: formValues.companyType || sessionData.companyType || '',
+          roleInCompany: formValues.roleInCompany || sessionData.roleInCompany || '',
+          interests: (formValues.interests || sessionData.interests || []) as string[],
+          companyDescription: formValues.companyDescription || sessionData.companyDescription || '',
+          annualTurnover: formValues.annualTurnover || sessionData.annualTurnover || '',
+          numberOfEmployees: formValues.numberOfEmployees || sessionData.numberOfEmployees || '',
+          fullName: formValues.fullName || sessionData.fullName || '',
+          phoneNumber: formValues.phoneNumber || sessionData.phoneNumber || '',
+          companyName: formValues.companyName || sessionData.companyName,
+        };
+
+        // Use sendBeacon for reliable submission
+        const data = JSON.stringify({ ...allData, status: 'DID_NOT_CLICK_SUBMIT_BUTTON', locale });
+        navigator.sendBeacon('/api/leads', new Blob([data], { type: 'application/json' }));
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [mounted, hasSubmitted, formValues, sessionData]);
+
+  // Auto-submit after 2 minutes if only phone and name are filled (PARTIAL)
+  useEffect(() => {
+    if (!mounted || hasSubmitted || hasRequiredFields === false) return;
 
     const timer = setTimeout(async () => {
-      // For PARTIAL submission, we still only need location, fullName, and phoneNumber
-      const location = (formValues.location || sessionData.location) as 'Toshkent shahri' | 'Boshqa viloyatda';
-      const fullName = formValues.fullName || sessionData.fullName || '';
-      const phoneNumber = formValues.phoneNumber || sessionData.phoneNumber || '';
+      // Only submit PARTIAL if form is NOT fully filled
+      const isFull = isFullFormFilled();
+      if (!isFull) {
+        const location = (formValues.location || sessionData.location) as 'Toshkent shahri' | 'Boshqa viloyatda';
+        const fullName = formValues.fullName || sessionData.fullName || '';
+        const phoneNumber = formValues.phoneNumber || sessionData.phoneNumber || '';
 
-      if (location && fullName && phoneNumber) {
-        // Create minimal data for PARTIAL submission
-        const partialData: Partial<FormData> & { location: 'Toshkent shahri' | 'Boshqa viloyatda'; fullName: string; phoneNumber: string } = {
-          location,
-          fullName,
-          phoneNumber,
-        };
-        await submitForm(partialData as any, 'PARTIAL');
+        if (location && fullName && phoneNumber) {
+          // Create minimal data for PARTIAL submission
+          const partialData: Partial<FormData> & { location: 'Toshkent shahri' | 'Boshqa viloyatda'; fullName: string; phoneNumber: string } = {
+            location,
+            fullName,
+            phoneNumber,
+          };
+          await submitForm(partialData as any, 'PARTIAL', false);
+        }
       }
     }, 2 * 60 * 1000);
 
     return () => clearTimeout(timer);
-  }, [hasRequiredFields, formValues, sessionData, mounted]);
+  }, [hasRequiredFields, formValues, sessionData, mounted, hasSubmitted]);
 
-  const submitForm = async (data: FormData, status: 'PARTIAL' | 'FULL', useTelegram: boolean = false) => {
+  const submitForm = async (data: FormData, status: 'PARTIAL' | 'FULL' | 'FULL_WITHOUT_TELEGRAM' | 'DID_NOT_CLICK_SUBMIT_BUTTON', useTelegram: boolean = false) => {
     if (!data.location || !data.fullName || !data.phoneNumber) {
       return;
     }
-    if (status === 'FULL') {
-      setIsSubmitting(true);
+    
+    // Prevent duplicate submissions
+    if (hasSubmitted) {
+      console.log('Form already submitted, skipping duplicate submission');
+      return;
     }
+    
+    if (status === 'FULL' || status === 'FULL_WITHOUT_TELEGRAM') {
+      setIsSubmitting(true);
+      setHasSubmitted(true);
+    }
+    
     try {
       const response = await fetch('/api/leads', {
         method: 'POST',
@@ -174,7 +304,11 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
       }
 
       const result = await response.json();
-      clearSession();
+      
+      // Only clear session for successful FULL submissions (not for auto-submissions)
+      if (status === 'FULL' || status === 'FULL_WITHOUT_TELEGRAM') {
+        clearSession();
+      }
 
       // Log result for debugging
       console.log('Form submission result:', result);
@@ -217,14 +351,15 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
   };
 
   const onSubmit = (data: FormData) => {
-    // For stage 9, if wantsTelegram is false, submit without redirecting
+    // For stage 9, if wantsTelegram is false, submit as FULL_WITHOUT_TELEGRAM
     if (currentStage === 9 && wantsTelegram === false) {
-      submitForm(data, 'FULL', false);
+      submitForm(data, 'FULL_WITHOUT_TELEGRAM', false);
     } else if (currentStage === 9 && wantsTelegram === true) {
-      // This is handled by the button click handler
+      // This is handled by the Share Telegram button click handler
       return;
     } else {
-      submitForm(data, 'FULL', false);
+      // Fallback: submit as FULL_WITHOUT_TELEGRAM if no preference
+      submitForm(data, 'FULL_WITHOUT_TELEGRAM', false);
     }
   };
 
@@ -642,9 +777,10 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                     phoneNumber: formValues.phoneNumber || sessionData.phoneNumber || '',
                     companyName: formValues.companyName || sessionData.companyName,
                   };
-                  if (currentData.location && currentData.fullName && currentData.phoneNumber) {
-                    await submitForm(currentData, 'FULL', true);
-                  }
+                    if (currentData.location && currentData.fullName && currentData.phoneNumber) {
+                      // Share Telegram button: submit as FULL and redirect to Telegram bot
+                      await submitForm(currentData, 'FULL', true);
+                    }
                 }}
                 className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-lg bg-red-600 hover:bg-red-700 text-white min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -697,7 +833,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                       companyName: formValues.companyName || sessionData.companyName,
                     };
                     if (currentData.location && currentData.fullName && currentData.phoneNumber) {
-                      await submitForm(currentData, 'FULL', false);
+                      // Tugatish/Finish button: submit as FULL_WITHOUT_TELEGRAM
+                      await submitForm(currentData, 'FULL_WITHOUT_TELEGRAM', false);
                     }
                   }}
                   className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-lg bg-red-600 hover:bg-red-700 text-white min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"

@@ -1,9 +1,11 @@
 export enum LeadStatus {
   PARTIAL = 'PARTIAL',
   FULL = 'FULL',
+  FULL_WITHOUT_TELEGRAM = 'FULL_WITHOUT_TELEGRAM',
   RETURNING = 'RETURNING',
   ACCEPTED = 'ACCEPTED',
   REJECTED = 'REJECTED',
+  DID_NOT_CLICK_SUBMIT_BUTTON = 'DID_NOT_CLICK_SUBMIT_BUTTON',
 }
 
 export interface CreateLeadDto {
@@ -18,7 +20,7 @@ export interface CreateLeadDto {
   phoneNumber: string;
   companyName?: string;
   locale?: string;
-  status: 'PARTIAL' | 'FULL';
+  status: 'PARTIAL' | 'FULL' | 'FULL_WITHOUT_TELEGRAM' | 'DID_NOT_CLICK_SUBMIT_BUTTON';
 }
 
 export interface LeadResponse {
