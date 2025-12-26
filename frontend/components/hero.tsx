@@ -179,7 +179,7 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
   }, []);
 
   return (
-    <div className="relative w-full mt-8 sm:mt-10">
+    <div className="relative w-full mt-6 sm:mt-8 md:mt-10">
       <div 
         ref={scrollContainerRef}
         className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
@@ -195,12 +195,12 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
           WebkitOverflowScrolling: 'touch',
         } as React.CSSProperties}
       >
-        <div ref={innerContainerRef} className="flex gap-8 md:gap-12 select-none">
+        <div ref={innerContainerRef} className="flex gap-4 sm:gap-6 md:gap-8 lg:gap-12 select-none px-2 sm:px-0">
           {duplicatedLogos.map((logo, index) => (
             <div
               key={index}
               className={cn(
-                "relative flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 lg:w-48 lg:h-48 flex items-center justify-center transition-all duration-300",
+                "relative flex-shrink-0 w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 lg:w-40 lg:h-40 xl:w-44 xl:h-44 2xl:w-48 2xl:h-48 flex items-center justify-center transition-all duration-300",
                 "opacity-60 grayscale hover:opacity-100 hover:grayscale-0"
               )}
             >
@@ -212,19 +212,19 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
                   "object-contain pointer-events-none",
                   // Increase padding for MUU and MuSchool logos to make them appear same size as others
                   (logo.alt === 'MUU' || logo.alt === 'MuSchool') 
-                    ? "p-6 sm:p-7 md:p-8 lg:p-9" 
-                    : "p-4 sm:p-5 md:p-6"
+                    ? "p-4 sm:p-5 md:p-6 lg:p-7 xl:p-8" 
+                    : "p-3 sm:p-4 md:p-5 lg:p-6"
                 )}
-                sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, (max-width: 1024px) 176px, 192px"
+                sizes="(max-width: 480px) 96px, (max-width: 640px) 112px, (max-width: 768px) 144px, (max-width: 1024px) 160px, 192px"
               />
             </div>
           ))}
         </div>
       </div>
       
-      {/* Gradient overlays for fade effect */}
-      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
-      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
+      {/* Gradient overlays for fade effect - responsive width */}
+      <div className="absolute left-0 top-0 bottom-0 w-12 sm:w-16 md:w-20 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-12 sm:w-16 md:w-20 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
     </div>
   );
 }
@@ -266,13 +266,13 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
     { src: '/companies/egs_main-removebg-preview.png', alt: 'EGS', fallback: 'EGS' },
     { src: '/companies/yosh olim.svg', alt: 'Yosh Olim', fallback: 'YO' },
     { src: '/companies/Logo white school.png', alt: 'MuSchool', fallback: 'MS' },
-    { src: '/companies/Tezz Go.png', alt: 'Tez Go', fallback: 'TG' },
+    { src: '/companies/Tez Go.png', alt: 'Tez Go', fallback: 'TG' },
   ];
 
   const headlineParts = parseHeadline(t.hero.headline, locale);
 
   return (
-    <div id="hero-section" className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 overflow-hidden pt-20 sm:pt-24 bg-white">
+    <div id="hero-section" className="relative min-h-screen flex items-center justify-center px-4 sm:px-6 md:px-8 overflow-hidden pt-16 sm:pt-20 md:pt-24 pb-8 sm:pb-12 md:pb-16 bg-white">
       {/* Beautiful background pattern */}
       <div className="absolute inset-0 bg-gradient-to-br from-gray-50 via-white to-red-50/30" />
       
@@ -285,13 +285,13 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
         )}
       />
       
-      {/* Decorative circles */}
-      <div className="absolute top-20 right-20 w-72 h-72 bg-red-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
-      <div className="absolute bottom-20 left-20 w-72 h-72 bg-gray-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000" />
+      {/* Decorative circles - responsive sizing */}
+      <div className="absolute top-10 sm:top-20 right-4 sm:right-20 w-48 h-48 sm:w-72 sm:h-72 bg-red-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" />
+      <div className="absolute bottom-10 sm:bottom-20 left-4 sm:left-20 w-48 h-48 sm:w-72 sm:h-72 bg-gray-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000" />
       
-      <div className="relative z-10 text-center max-w-5xl mx-auto">
-        {/* Main headline with highlighted words */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tighter mb-6 sm:mb-8 leading-tight text-gray-900">
+      <div className="relative z-10 text-center max-w-5xl mx-auto w-full">
+        {/* Main headline with highlighted words - improved mobile/tablet sizing */}
+        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl 2xl:text-7xl font-bold tracking-tighter mb-4 sm:mb-6 md:mb-8 leading-tight text-gray-900 px-2 sm:px-0">
           {headlineParts.map((part, index) => (
             <span
               key={index}
