@@ -1,0 +1,102 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: hrsevil-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hrsevil
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hrsevil-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: hrsevil-backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/hrsevil
+      BACKEND_PORT: 3001
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_GROUP_ID: ${TELEGRAM_GROUP_ID}
+      TELEGRAM_CHANNEL_ID: ${TELEGRAM_CHANNEL_ID}
+      TELEGRAM_BOT_URL: ${NEXT_PUBLIC_TELEGRAM_BOT_URL}
+      NEXT_PUBLIC_TELEGRAM_BOT_URL: ${NEXT_PUBLIC_TELEGRAM_BOT_URL}
+      WEBHOOK_URL: ${WEBHOOK_URL}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./prisma:/app/prisma
+      - ./backend/src:/app/src
+      - ./backend/package.json:/app/package.json
+      - ./backend/tsconfig.json:/app/tsconfig.json
+    networks:
+      - hrsevil-network
+    working_dir: /app
+    command: sh -c "./node_modules/.bin/prisma generate && npm run dev"
+
+  # Telegram bot is now integrated into the backend service
+  # telegram-bot:
+  #   build:
+  #     context: ./telegram-bot
+  #     dockerfile: Dockerfile
+  #   container_name: hrsevil-telegram-bot
+  #   environment:
+  #     DATABASE_URL: postgresql://postgres:postgres@postgres:5432/hrsevil
+  #     TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+  #     TELEGRAM_GROUP_ID: ${TELEGRAM_GROUP_ID}
+  #     TELEGRAM_CHANNEL_ID: ${TELEGRAM_CHANNEL_ID}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./prisma:/app/prisma
+  #     - ./telegram-bot/src:/app/src
+  #     - ./telegram-bot/package.json:/app/package.json
+  #     - ./telegram-bot/tsconfig.json:/app/tsconfig.json
+  #   networks:
+  #     - hrsevil-network
+  #   working_dir: /app
+  #   command: sh -c "./node_modules/.bin/prisma generate && npm run dev"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: hrsevil-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_TELEGRAM_BOT_URL: ${NEXT_PUBLIC_TELEGRAM_BOT_URL}
+      NEXT_PUBLIC_DEFAULT_LOCALE: uz
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - hrsevil-network
+    command: npm run dev
+
+volumes:
+  postgres_data:
+
+networks:
+  hrsevil-network:
+    driver: bridge
+

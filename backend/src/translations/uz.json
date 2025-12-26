@@ -1,0 +1,45 @@
+{
+  "start": {
+    "welcome": "👋 Xush kelibsiz! Sizning arizangiz qabul qilindi.",
+    "channelJoin": "📢 Yangilanishlar va muhim e'lonlar uchun kanalimizga qo'shiling!",
+    "joinChannel": "📢 Kanalga qo'shilish",
+    "iveJoined": "✓ Men qo'shildim",
+    "applicationStatus": "📊 Arizangiz holati",
+    "accepted": "✅ Qabul qilindi!",
+    "rejected": "❌ Rad etildi",
+    "pending": "⏳ Ko'rib chiqilmoqda",
+    "reason": "Sabab",
+    "error": "Xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring."
+  },
+  "channel": {
+    "reminder": "📢 Yangilanishlar va muhim e'lonlar uchun kanalimizga qo'shilishni unutmang!",
+    "joinChannel": "📢 Kanalga qo'shilish",
+    "iveJoined": "✓ Men qo'shildim",
+    "thankYou": "✅ Ajoyib! Kanalimizga qo'shilganingiz uchun rahmat. Muhim yangilanishlar u yerda bo'ladi.",
+    "pleaseJoin": "⚠️ Iltimos, avval kanalimizga qo'shiling: @{channel}\n\nQo'shilgandan so'ng, \"Men qo'shildim\" tugmasini yana bosing.",
+    "recorded": "✅ Rahmat! Sizning tasdiqlashingiz qayd etildi.",
+    "error": "❌ Kanal a'zoligini tekshirishda xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring."
+  },
+  "notification": {
+    "accepted": "✅ Sizning arizangiz qabul qilindi! Tez orada siz bilan bog'lanamiz.",
+    "rejected": "❌ Sizning arizangiz rad etildi.",
+    "channelReminder": "📢 Yangilanishlar va muhim e'lonlar uchun kanalimizga qo'shilishni unutmang!"
+  },
+  "callback": {
+    "errorAccepting": "Arizani qabul qilishda xatolik. Iltimos, qayta urinib ko'ring.",
+    "errorRejecting": "Arizani rad etishda xatolik. Iltimos, qayta urinib ko'ring.",
+    "rejectReason": "Rad etish sababini kiriting:",
+    "incompleteInfo": "To'liq bo'lmagan ma'lumot",
+    "notQualified": "Tegishli emas",
+    "duplicate": "Takroriy ariza",
+    "other": "Boshqa",
+    "rejectedSuccess": "✅ Ariza muvaffaqiyatli rad etildi.",
+    "pleaseProvideReason": "Iltimos, yaroqli rad etish sababini kiriting.",
+    "leadNotFound": "Xatolik: Ariza topilmadi.",
+    "errorProcessing": "Rad etishni qayta ishlashda xatolik. Iltimos, qayta urinib ko'ring."
+  },
+  "message": {
+    "error": "Xatolik yuz berdi. Iltimos, keyinroq qayta urinib ko'ring."
+  }
+}
+

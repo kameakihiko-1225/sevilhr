@@ -1,0 +1,76 @@
+# Replit configuration for HRSEVIL ATS
+
+# Run command - this is what Replit executes when you click "Run"
+# Single command that builds and runs everything (frontend, backend, PostgreSQL migrations)
+run = "npm run build && npm run start:prod"
+
+# Language
+language = "nodejs"
+
+# Entry point
+entrypoint = "scripts/start.js"
+
+# Always on - keep the repl running
+alwaysOn = false
+
+# On boot - commands to run when repl starts
+onBoot = "npm install && cd backend && npm install && cd ../frontend && npm install"
+modules = ["nodejs-20"]
+
+# Package manager
+[nix]
+channel = "stable-22_11"
+
+[languages.nodejs]
+pattern = "**/*.{js,ts,json}"
+
+[languages.nodejs.languageServer]
+start = "typescript-language-server --stdio"
+
+# PostgreSQL Database
+[deploy]
+run = ["sh", "-c", "npm run start:prod"]
+
+[env]
+NODE_ENV = "production"
+
+[agent]
+expertMode = true
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 3001
+externalPort = 3001
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["npm", "run", "start:prod"]
+build = ["sh", "-c", "npm run install:all && npm run build"]
+

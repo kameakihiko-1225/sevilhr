@@ -1,0 +1,132 @@
+025-12-26 11:15:55.40
+884140ad
+User
+│ Deploying your app to serverless or edge functions? │
+2025-12-26 11:15:55.40
+884140ad
+User
+const prisma = new PrismaClient()
+2025-12-26 11:15:55.40
+884140ad
+User
+✔ Generated Prisma Client (v5.7.1) to ./node_modules/@prisma/client in 157ms
+2025-12-26 11:15:55.40
+884140ad
+User
+import { PrismaClient } from '@prisma/client'
+2025-12-26 11:15:55.40
+884140ad
+User
+```
+2025-12-26 11:15:55.40
+884140ad
+User
+or start using Prisma Client at the edge (See: https://pris.ly/d/accelerate)
+2025-12-26 11:15:55.40
+884140ad
+User
+└─────────────────────────────────────────────────────────────┘
+2025-12-26 11:15:55.40
+884140ad
+User
+│ https://pris.ly/cli/accelerate │
+2025-12-26 11:15:55.40
+884140ad
+User
+```
+2025-12-26 11:15:55.40
+884140ad
+User
+Start using Prisma Client in Node.js (See: https://pris.ly/d/client)
+2025-12-26 11:15:55.45
+884140ad
+User
+✅ Prisma Client generated successfully
+2025-12-26 11:15:55.46
+884140ad
+User
+🔄 Running database migrations...
+2025-12-26 11:15:56.75
+884140ad
+User
+Prisma schema loaded from prisma/schema.prisma
+2025-12-26 11:15:56.76
+884140ad
+User
+Datasource "db": PostgreSQL database "neondb", schema "public" at "ep-long-sky-ahfset0b.c-3.us-east-1.aws.neon.tech"
+2025-12-26 11:15:57.28
+884140ad
+User
+No migration found in prisma/migrations
+2025-12-26 11:15:57.84
+884140ad
+User
+No pending migrations to apply.
+2025-12-26 11:15:57.90
+884140ad
+User
+│ npm i @prisma/client@latest │
+2025-12-26 11:15:57.90
+884140ad
+User
+│ npm i --save-dev prisma@latest │
+2025-12-26 11:15:57.90
+884140ad
+User
+│ Run the following to update │
+2025-12-26 11:15:57.90
+884140ad
+User
+│ This is a major update - please follow the guide at │
+2025-12-26 11:15:57.90
+884140ad
+User
+└─────────────────────────────────────────────────────────┘
+2025-12-26 11:15:57.90
+884140ad
+User
+│ https://pris.ly/d/major-version-upgrade │
+2025-12-26 11:15:57.90
+884140ad
+User
+│ Update available 5.7.1 -> 7.2.0 │
+2025-12-26 11:15:57.90
+884140ad
+User
+┌─────────────────────────────────────────────────────────┐
+2025-12-26 11:15:57.90
+884140ad
+User
+│ │
+2025-12-26 11:15:57.90
+884140ad
+User
+│ │
+2025-12-26 11:15:57.95
+884140ad
+User
+✅ Database migrations completed
+2025-12-26 11:15:57.95
+884140ad
+User
+🔧 Starting backend server...
+2025-12-26 11:15:57.96
+884140ad
+User
+🎨 Starting frontend server...
+2025-12-26 11:15:58.28
+884140ad
+User
+> hrsevil-backend@1.0.0 start
+2025-12-26 11:15:58.28
+884140ad
+User
+> node dist/index.js
+2025-12-26 11:15:58.34
+884140ad
+User
+> next start -H 0.0.0.0 -p 5000
+2025-12-26 11:15:58.34
+884140ad
+User
+> frontend@0.1.0 start

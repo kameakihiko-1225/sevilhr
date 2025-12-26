@@ -1,0 +1,45 @@
+{
+  "start": {
+    "welcome": "👋 Welcome! Your application has been received.",
+    "channelJoin": "📢 Join our channel for updates and important announcements!",
+    "joinChannel": "📢 Join Channel",
+    "iveJoined": "✓ I've Joined",
+    "applicationStatus": "📊 Your Application Status",
+    "accepted": "✅ Accepted!",
+    "rejected": "❌ Rejected",
+    "pending": "⏳ Pending review",
+    "reason": "Reason",
+    "error": "An error occurred. Please try again later."
+  },
+  "channel": {
+    "reminder": "📢 Don't forget to join our channel for updates and important announcements!",
+    "joinChannel": "📢 Join Channel",
+    "iveJoined": "✓ I've Joined",
+    "thankYou": "✅ Great! Thank you for joining our channel. You'll receive important updates there.",
+    "pleaseJoin": "⚠️ Please join our channel first: @{channel}\n\nAfter joining, click the \"I've Joined\" button again to confirm.",
+    "recorded": "✅ Thank you! We've recorded your confirmation.",
+    "error": "❌ There was an error verifying your channel membership. Please try again later."
+  },
+  "notification": {
+    "accepted": "✅ Your application has been accepted! We will contact you soon.",
+    "rejected": "❌ Your application has been rejected.",
+    "channelReminder": "📢 Don't forget to join our channel for updates and important announcements!"
+  },
+  "callback": {
+    "errorAccepting": "Error accepting lead. Please try again.",
+    "errorRejecting": "Error processing rejection. Please try again.",
+    "rejectReason": "Please select a rejection reason:",
+    "incompleteInfo": "Incomplete information",
+    "notQualified": "Not qualified",
+    "duplicate": "Duplicate application",
+    "other": "Other",
+    "rejectedSuccess": "✅ Lead rejected successfully.",
+    "pleaseProvideReason": "Please provide a valid rejection reason.",
+    "leadNotFound": "Error: Lead not found.",
+    "errorProcessing": "Error processing rejection. Please try again."
+  },
+  "message": {
+    "error": "An error occurred. Please try again later."
+  }
+}
+

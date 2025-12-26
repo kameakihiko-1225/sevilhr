@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum LeadStatus {
+  PARTIAL
+  FULL
+  RETURNING
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id              String   @id @default(uuid())
+  phoneNumber     String   @unique @map("phone_number")
+  telegramId      String?  @unique @map("telegram_id")
+  telegramUsername String? @map("telegram_username")
+  firstName       String?  @map("first_name")
+  lastName        String?  @map("last_name")
+  locale          String   @default("uz") @map("locale")
+  channelJoined   Boolean  @default(false) @map("channel_joined")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  
+  leads           Lead[]
+  channelReminder ChannelJoinReminder?
+
+  @@index([phoneNumber])
+  @@index([telegramId])
+  @@map("users")
+}
+
+model ChannelJoinReminder {
+  id                String   @id @default(uuid())
+  userId            String   @unique @map("user_id")
+  lastReminderSentAt DateTime? @map("last_reminder_sent_at")
+  nextReminderAt    DateTime? @map("next_reminder_at")
+  reminderCount     Int      @default(0) @map("reminder_count")
+  hasJoinedChannel  Boolean  @default(false) @map("has_joined_channel")
+  joinedAt          DateTime? @map("joined_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([hasJoinedChannel, nextReminderAt])
+  @@map("channel_join_reminders")
+}
+
+model Lead {
+  id                 String     @id @default(uuid())
+  userId             String     @map("user_id")
+  location           String
+  companyType        String?    @map("company_type")
+  roleInCompany      String?    @map("role_in_company")
+  interests          String[]   @default([])
+  companyDescription String?    @map("company_description") @db.Text
+  annualTurnover     String?    @map("annual_turnover")
+  numberOfEmployees  String?    @map("number_of_employees")
+  fullName           String     @map("full_name")
+  phoneNumber        String     @map("phone_number")
+  companyName        String?    @map("company_name")
+  status             LeadStatus @default(PARTIAL)
+  acceptedBy         String?    @map("accepted_by")
+  rejectedBy         String?    @map("rejected_by")
+  rejectionReason    String?    @map("rejection_reason")
+  telegramMessageId  String?    @map("telegram_message_id")
+  telegramChatId     String?    @map("telegram_chat_id")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  updatedAt          DateTime   @updatedAt @map("updated_at")
+  
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([phoneNumber])
+  @@index([userId])
+  @@index([status])
+  @@map("leads")
+}
+
