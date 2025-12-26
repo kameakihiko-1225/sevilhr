@@ -40,6 +40,7 @@ const TOTAL_STAGES = 9;
 export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationFormProps) {
   const [currentStage, setCurrentStage] = useState(1);
   const [wantsTelegram, setWantsTelegram] = useState<boolean | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { formData: sessionData, updateField, clearSession, hasRequiredFields, mounted } = useSession();
   const t = getTranslations(locale);
   
@@ -157,6 +158,9 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     if (!data.location || !data.fullName || !data.phoneNumber) {
       return;
     }
+    if (status === 'FULL') {
+      setIsSubmitting(true);
+    }
     try {
       const response = await fetch('/api/leads', {
         method: 'POST',
@@ -207,6 +211,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     } catch (error) {
       console.error('Error submitting form:', error);
       alert('Error submitting form. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -610,10 +616,12 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
             </div>
 
             {/* Telegram Button */}
-            {wantsTelegram === null && (
+            {(wantsTelegram === null || isSubmitting) && (
               <Button
                 type="button"
+                disabled={isSubmitting}
                 onClick={async () => {
+                  if (isSubmitting) return;
                   // Validate form first
                   const isValid = await trigger();
                   if (!isValid) {
@@ -638,22 +646,36 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                     await submitForm(currentData, 'FULL', true);
                   }
                 }}
-                className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-lg bg-red-600 hover:bg-red-700 text-white min-h-[48px]"
+                className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-lg bg-red-600 hover:bg-red-700 text-white min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {t.form.phoneNumber.submitButton}
-                <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    {'Submitting...'}
+                  </span>
+                ) : (
+                  <>
+                    {t.form.phoneNumber.submitButton}
+                    <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  </>
+                )}
               </Button>
             )}
 
             {/* CEO Comment */}
             <CEOComment stage={9} locale={locale} />
             
-            {/* Finish Button - shown when wantsTelegram is null */}
-            {wantsTelegram === null && (
+            {/* Finish Button - shown when wantsTelegram is null or submitting */}
+            {(wantsTelegram === null || isSubmitting) && (
               <div className="mt-6 sm:mt-8">
                 <Button
                   type="button"
+                  disabled={isSubmitting}
                   onClick={async () => {
+                    if (isSubmitting) return;
                     // Validate form first
                     const isValid = await trigger();
                     if (!isValid) {
@@ -678,10 +700,22 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                       await submitForm(currentData, 'FULL', false);
                     }
                   }}
-                  className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-lg bg-red-600 hover:bg-red-700 text-white min-h-[48px]"
+                  className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-lg bg-red-600 hover:bg-red-700 text-white min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {t.form.finish}
-                  <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                  {isSubmitting ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {'Submitting...'}
+                    </span>
+                  ) : (
+                    <>
+                      {t.form.finish}
+                      <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                    </>
+                  )}
                 </Button>
               </div>
             )}

@@ -7,7 +7,10 @@ const nextConfig: NextConfig = {
     '127.0.0.1',
     'localhost',
     '*.replit.dev',
+    '*.kirk.replit.dev',
     '*.sisko.replit.dev',
+    '*.spock.replit.dev',
+    '*.picard.replit.dev',
   ],
   devIndicators: false,
   async rewrites() {
