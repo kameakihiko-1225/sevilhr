@@ -255,11 +255,11 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
   const partnerLogos = [
     { src: '/companies/cert main.png', alt: 'Cert Main', fallback: 'CM' },
     { src: '/companies/gold real.jpg', alt: 'Gold Real', fallback: 'GR' },
-    { src: '/companies/muschool.png', alt: 'MuSchool', fallback: 'MS' },
     { src: '/companies/muu.png', alt: 'MUU', fallback: 'MU' },
     { src: '/companies/redbullcom-logo_double-with-text.svg', alt: 'Red Bull', fallback: 'RB' },
     { src: '/companies/egs main.jpg', alt: 'EGS', fallback: 'EGS' },
-    { src: '/companies/logo 1+.svg', alt: 'Logo 1+', fallback: 'L1+' },
+    { src: '/companies/yosh olim.svg', alt: 'Yosh Olim', fallback: 'YO' },
+    { src: '/companies/muschool-logo.png', alt: 'MuSchool', fallback: 'MS' },
     { src: '/companies/tez go.jpg', alt: 'Tez Go', fallback: 'TG' },
   ];
 

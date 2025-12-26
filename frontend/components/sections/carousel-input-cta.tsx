@@ -95,7 +95,7 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
   const showCarousel = inputValue.trim() === '' && !isFocused;
 
   return (
-    <div className="mb-6 sm:mb-8 sm:mb-10 flex flex-col sm:flex-row items-stretch sm:items-center max-w-2xl mx-auto">
+    <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-stretch sm:items-center max-w-2xl mx-auto">
       <div className="flex border-2 border-red-300 rounded-lg overflow-hidden flex-1">
         {/* Input field with carousel overlay */}
         <div className="relative flex-1">
