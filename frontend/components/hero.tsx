@@ -4,14 +4,225 @@ import AnimatedGridPattern from "@/components/ui/animated-grid-pattern";
 import { cn } from "@/lib/utils";
 import { getTranslations, Locale } from "@/lib/i18n";
 import { AnimatedTextCarousel } from "@/components/sections/animated-text-carousel";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowUpRight, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import { useRef, useEffect, useState } from 'react';
 
 interface HeroProps {
   locale?: Locale;
+}
+
+interface HeroLogoCarouselProps {
+  logos: Array<{ src: string; alt: string; fallback: string }>;
+}
+
+// Hero Logo Carousel Component - Horizontal scrolling carousel
+function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const innerContainerRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const animationRef = useRef<number | null>(null);
+  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Duplicate logos for seamless infinite scroll
+  const duplicatedLogos = [...logos, ...logos, ...logos];
+
+  // Initialize scroll position to middle set for seamless loop
+  useEffect(() => {
+    if (!scrollContainerRef.current || !innerContainerRef.current) return;
+    
+    const container = scrollContainerRef.current;
+    const innerContainer = innerContainerRef.current;
+    
+    const initScroll = () => {
+      if (container.scrollWidth === 0) {
+        requestAnimationFrame(initScroll);
+        return;
+      }
+      
+      const singleSetWidth = container.scrollWidth / 3;
+      container.scrollLeft = singleSetWidth;
+    };
+    
+    initScroll();
+  }, []);
+
+  // Handle infinite loop on scroll
+  useEffect(() => {
+    if (!scrollContainerRef.current) return;
+    
+    const container = scrollContainerRef.current;
+    
+    const handleScroll = () => {
+      if (!container || isDragging) return;
+      
+      const singleSetWidth = container.scrollWidth / 3;
+      
+      if (container.scrollLeft >= singleSetWidth * 2) {
+        container.scrollLeft = container.scrollLeft - singleSetWidth;
+      } else if (container.scrollLeft <= 0) {
+        container.scrollLeft = singleSetWidth + container.scrollLeft;
+      }
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [isDragging]);
+
+  // Auto-scroll animation
+  useEffect(() => {
+    if (isPaused || isDragging || !scrollContainerRef.current) {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+      return;
+    }
+
+    const scrollSpeed = 0.8;
+    const container = scrollContainerRef.current;
+
+    const animate = () => {
+      if (!container || isPaused || isDragging) return;
+      
+      container.scrollLeft += scrollSpeed;
+      
+      const singleSetWidth = container.scrollWidth / 3;
+      if (container.scrollLeft >= singleSetWidth * 2) {
+        container.scrollLeft = container.scrollLeft - singleSetWidth;
+      }
+      
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isPaused, isDragging]);
+
+  const clearPauseTimeout = () => {
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
+      pauseTimeoutRef.current = null;
+    }
+  };
+
+  const resumeAutoScroll = () => {
+    clearPauseTimeout();
+    pauseTimeoutRef.current = setTimeout(() => {
+      setIsPaused(false);
+    }, 800);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollContainerRef.current) return;
+    setIsDragging(true);
+    setIsPaused(true);
+    setStartX(e.pageX - scrollContainerRef.current.offsetLeft);
+    setScrollLeft(scrollContainerRef.current.scrollLeft);
+    e.preventDefault();
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+    resumeAutoScroll();
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    resumeAutoScroll();
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 2.5;
+    scrollContainerRef.current.scrollLeft = scrollLeft - walk;
+    clearPauseTimeout();
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!scrollContainerRef.current) return;
+    setIsDragging(true);
+    setIsPaused(true);
+    setStartX(e.touches[0].pageX - scrollContainerRef.current.offsetLeft);
+    setScrollLeft(scrollContainerRef.current.scrollLeft);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    const x = e.touches[0].pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startX) * 2.5;
+    scrollContainerRef.current.scrollLeft = scrollLeft - walk;
+    clearPauseTimeout();
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    resumeAutoScroll();
+  };
+
+  useEffect(() => {
+    return () => {
+      clearPauseTimeout();
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="relative w-full mt-8 sm:mt-10">
+      <div 
+        ref={scrollContainerRef}
+        className="overflow-x-auto scrollbar-hide cursor-grab active:cursor-grabbing"
+        onMouseDown={handleMouseDown}
+        onMouseLeave={handleMouseLeave}
+        onMouseUp={handleMouseUp}
+        onMouseMove={handleMouseMove}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ 
+          scrollBehavior: 'auto',
+          WebkitOverflowScrolling: 'touch',
+        } as React.CSSProperties}
+      >
+        <div ref={innerContainerRef} className="flex gap-8 md:gap-12 select-none">
+          {duplicatedLogos.map((logo, index) => (
+            <div
+              key={index}
+              className={cn(
+                "relative flex-shrink-0 w-40 sm:w-48 md:w-56 lg:w-64 h-20 sm:h-24 md:h-28 lg:h-32 flex items-center justify-center transition-all duration-300",
+                "opacity-60 grayscale hover:opacity-100 hover:grayscale-0"
+              )}
+            >
+              <Image
+                src={logo.src}
+                alt={logo.alt}
+                fill
+                className="object-contain pointer-events-none p-3 sm:p-4"
+                sizes="(max-width: 640px) 160px, (max-width: 768px) 192px, (max-width: 1024px) 224px, 256px"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Gradient overlays for fade effect */}
+      <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
+      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
+    </div>
+  );
 }
 
 // Function to parse headline and highlight specific words in red
@@ -50,6 +261,8 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
     { src: '/companies/muu.png', alt: 'MUU', fallback: 'MU' },
     { src: '/companies/redbullcom-logo_double-with-text.svg', alt: 'Red Bull', fallback: 'RB' },
     { src: '/companies/egs main.jpg', alt: 'EGS', fallback: 'EGS' },
+    { src: '/companies/logo 1+.svg', alt: 'Logo 1+', fallback: 'L1+' },
+    { src: '/companies/tez go.jpg', alt: 'Tez Go', fallback: 'TG' },
   ];
 
   const headlineParts = parseHeadline(t.hero.headline, locale);
@@ -73,37 +286,22 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
       <div className="absolute bottom-20 left-20 w-72 h-72 bg-gray-100 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000" />
       
       <div className="relative z-10 text-center max-w-5xl mx-auto">
-        {/* What's new banner */}
-        <div 
-          onClick={() => {
-            const formSection = document.getElementById('application-form');
-            if (formSection) {
-              formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }}
-          className="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-white border border-red-300 shadow-sm mb-6 sm:mb-8 hover:bg-red-50 transition-colors cursor-pointer group min-h-[44px]"
-        >
-          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-600"></div>
-          <span className="text-sm sm:text-base text-gray-700 font-medium">{t.hero.whatsNew}</span>
-          <ArrowUpRight className="w-4 h-4 sm:w-4 sm:h-4 text-red-600 group-hover:text-red-700 transition-colors" />
-        </div>
-
         {/* Main headline with highlighted words */}
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tighter mb-6 sm:mb-8 leading-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tighter mb-6 sm:mb-8 leading-tight text-gray-900">
           {headlineParts.map((part, index) => (
             <span
               key={index}
-              className={part.highlight ? 'text-red-600' : 'text-gray-900'}
+              className="text-gray-900"
             >
               {part.text}
             </span>
           ))}
         </h1>
         
-        {/* Carousel text in a card - no backdrop blur */}
-        <Card className="bg-white border-2 border-red-600 shadow-xl rounded-2xl p-4 sm:p-6 md:p-8 mb-6 sm:mb-8">
+        {/* Carousel text */}
+        <div className="mb-6 sm:mb-8">
           <AnimatedTextCarousel texts={t.hero.rotating} locale={locale} />
-        </Card>
+        </div>
 
         {/* CTA Button - Extra large width, reduced height */}
         <Button 
@@ -119,34 +317,8 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
           <ArrowRight className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5" />
         </Button>
 
-        {/* Partner Logos Section - Centered with Overlapping Avatar Group */}
-        <div className="flex flex-col items-center gap-4">
-          {/* Partner Logos - Overlapping Avatar Group */}
-          <div className="flex items-center justify-center -space-x-3">
-            {partnerLogos.map((partner, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "relative w-16 h-16 md:w-20 md:h-20 rounded-full ring-2 ring-background border-2 border-white overflow-hidden",
-                  "transition-all duration-300 hover:scale-110 hover:shadow-lg"
-                )}
-              >
-                <Image
-                  src={partner.src}
-                  alt={partner.alt}
-                  fill
-                  className="object-contain p-1.5 md:p-2 bg-white"
-                  sizes="(max-width: 768px) 64px, 80px"
-                />
-              </div>
-            ))}
-          </div>
-          
-          {/* Social proof text - Bigger */}
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 font-semibold">
-            {t.hero.socialProof}
-          </p>
-        </div>
+        {/* Partner Logos Carousel */}
+        <HeroLogoCarousel logos={partnerLogos} />
       </div>
     </div>
   );

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Locale } from '@/lib/i18n';
 
 interface AnimatedTextCarouselProps {
@@ -71,42 +70,92 @@ const parseCarouselText = (text: string, locale: Locale) => {
 
 export function AnimatedTextCarousel({ texts, interval = 3000, locale = 'uz' }: AnimatedTextCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [displayedText, setDisplayedText] = useState('');
+  const [isTyping, setIsTyping] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [wordIndex, setWordIndex] = useState(0);
+
+  const currentText = texts[currentIndex] || '';
+  const words = currentText.split(' ');
 
   useEffect(() => {
-    if (texts.length <= 1) return;
+    if (texts.length <= 1) {
+      setDisplayedText(currentText);
+      return;
+    }
 
-    const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % texts.length);
-    }, interval);
+    let timeout: NodeJS.Timeout;
 
-    return () => clearInterval(timer);
-  }, [texts.length, interval]);
+    if (isTyping && !isDeleting) {
+      // Typing mode: add word by word
+      if (wordIndex < words.length) {
+        timeout = setTimeout(() => {
+          setDisplayedText(prev => prev + (prev ? ' ' : '') + words[wordIndex]);
+          setWordIndex(prev => prev + 1);
+        }, 150); // Typing speed: 150ms per word (smoother)
+      } else {
+        // All words typed, pause then start deleting
+        timeout = setTimeout(() => {
+          setIsTyping(false);
+          setIsDeleting(true);
+          setWordIndex(words.length - 1);
+        }, 2000); // Pause for 2 seconds
+      }
+    } else if (isDeleting) {
+      // Deleting mode: delete word by word
+      if (wordIndex >= 0) {
+        timeout = setTimeout(() => {
+          const wordsToKeep = words.slice(0, wordIndex);
+          setDisplayedText(wordsToKeep.join(' '));
+          setWordIndex(prev => prev - 1);
+        }, 120); // Deleting speed: 120ms per word (smoother)
+      } else {
+        // All words deleted, move to next text
+        timeout = setTimeout(() => {
+          setDisplayedText('');
+          setCurrentIndex(prev => (prev + 1) % texts.length);
+          setIsTyping(true);
+          setIsDeleting(false);
+          setWordIndex(0);
+        }, 200); // Reduced delay for smoother transition
+      }
+    }
 
-  const textParts = parseCarouselText(texts[currentIndex], locale);
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [currentIndex, isTyping, isDeleting, wordIndex, words, texts.length, currentText]);
+
+  // Reset when currentIndex changes
+  useEffect(() => {
+    setDisplayedText('');
+    setIsTyping(true);
+    setIsDeleting(false);
+    setWordIndex(0);
+  }, [currentIndex]);
+
+  const textParts = parseCarouselText(displayedText, locale);
 
   return (
-    <div className="relative min-h-[60px] flex items-center justify-center">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentIndex}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.5 }}
-          className="text-center w-full"
-        >
-          <div className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
-            {textParts.map((part, index) => (
+    <div className="relative min-h-[60px] sm:min-h-[80px] flex items-center justify-center px-4">
+      <div className="text-center w-full">
+        <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-normal leading-tight text-gray-900 transition-all duration-300 ease-in-out">
+          {textParts.length > 0 ? (
+            textParts.map((part, index) => (
               <span
                 key={index}
-                className={part.highlight ? 'text-red-600' : 'text-gray-700'}
+                className="text-gray-900 transition-opacity duration-200 ease-in-out"
               >
                 {part.text}
               </span>
-            ))}
-          </div>
-        </motion.div>
-      </AnimatePresence>
+            ))
+          ) : (
+            <span className="text-gray-900 transition-opacity duration-200 ease-in-out">{displayedText}</span>
+          )}
+          {/* Cursor blink effect */}
+          <span className="inline-block w-0.5 h-6 sm:h-8 md:h-10 bg-gray-900 ml-1 animate-pulse transition-opacity duration-200" />
+        </div>
+      </div>
     </div>
   );
 }

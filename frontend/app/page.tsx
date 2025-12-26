@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/navbar';
 import Hero from '@/components/hero';
 import { ApplicationForm } from '@/components/sections/application-form';
-import { LogoCloud } from '@/components/sections/logo-cloud';
-import Footer from '@/components/footer';
 import { Locale } from '@/lib/i18n';
 
 export default function Home() {
@@ -28,8 +26,6 @@ export default function Home() {
       <Navbar locale={currentLocale} />
       <Hero locale={currentLocale} />
       <ApplicationForm locale={currentLocale} />
-      <LogoCloud locale={currentLocale} />
-      <Footer locale={currentLocale} />
     </main>
   );
 }
