@@ -8,15 +8,36 @@ export async function sendLeadToGroup(
   bot: Bot,
   leadId: string
 ) {
+  console.log(`[sendLeadToGroup] Starting to send lead ${leadId} to group`);
+  
+  // Validate GROUP_ID is set
+  if (!GROUP_ID || GROUP_ID.trim() === '') {
+    console.error('[sendLeadToGroup] ❌ TELEGRAM_GROUP_ID environment variable is not set or is empty');
+    console.error('[sendLeadToGroup] Cannot send lead to group without GROUP_ID');
+    return;
+  }
+  
+  console.log(`[sendLeadToGroup] GROUP_ID is set: ${GROUP_ID}`);
+
   const lead = await prisma.lead.findUnique({
     where: { id: leadId },
     include: { user: true },
   });
 
-  // Send FULL and RETURNING leads to the group
-  if (!lead || (lead.status !== LeadStatus.FULL && lead.status !== LeadStatus.RETURNING)) {
+  if (!lead) {
+    console.warn(`[sendLeadToGroup] Lead ${leadId} not found in database`);
     return;
   }
+
+  console.log(`[sendLeadToGroup] Lead found: ${lead.id}, Status: ${lead.status}`);
+
+  // Send FULL and RETURNING leads to the group
+  if (lead.status !== LeadStatus.FULL && lead.status !== LeadStatus.RETURNING) {
+    console.log(`[sendLeadToGroup] Lead ${leadId} has status ${lead.status}, skipping (only FULL and RETURNING leads are sent)`);
+    return;
+  }
+  
+  console.log(`[sendLeadToGroup] Lead status is ${lead.status}, proceeding to send full data to group`);
 
   const telegramContact = lead.user.telegramId 
     ? `\n📱 Telegram: @${lead.user.telegramUsername || lead.user.telegramId}`
@@ -115,11 +136,17 @@ export async function sendLeadToGroup(
     inline_keyboard: inlineKeyboard,
   };
 
+  console.log(`[sendLeadToGroup] Preparing to send message to group ${GROUP_ID}`);
+  console.log(`[sendLeadToGroup] Message length: ${message.length} characters`);
+  console.log(`[sendLeadToGroup] Message preview: ${message.substring(0, 100)}...`);
+
   try {
     const sentMessage = await bot.api.sendMessage(GROUP_ID, message, {
       parse_mode: 'Markdown',
       reply_markup: keyboard,
     });
+
+    console.log(`[sendLeadToGroup] ✅ Successfully sent lead message to group. Message ID: ${sentMessage.message_id}`);
 
     // Update lead with message ID
     await prisma.lead.update({
@@ -129,8 +156,38 @@ export async function sendLeadToGroup(
         telegramChatId: GROUP_ID,
       },
     });
+    
+    console.log(`[sendLeadToGroup] ✅ Updated lead ${lead.id} with telegramMessageId: ${sentMessage.message_id}, telegramChatId: ${GROUP_ID}`);
   } catch (error) {
-    console.error('Error sending lead to group:', error);
+    console.error(`[sendLeadToGroup] ❌ Error sending lead ${leadId} to group ${GROUP_ID}:`, error);
+    
+    if (error instanceof Error) {
+      console.error(`[sendLeadToGroup] Error type: ${error.constructor.name}`);
+      console.error(`[sendLeadToGroup] Error message: ${error.message}`);
+      
+      // Provide specific error messages for common Telegram API errors
+      if (error.message.includes('chat not found')) {
+        console.error(`[sendLeadToGroup] The group/chat ${GROUP_ID} may not exist or the bot is not a member of the group`);
+        console.error(`[sendLeadToGroup] Make sure the bot is added to the group and has permission to send messages`);
+      } else if (error.message.includes('bot was blocked')) {
+        console.error(`[sendLeadToGroup] The bot was blocked by the group or user`);
+      } else if (error.message.includes('not enough rights')) {
+        console.error(`[sendLeadToGroup] The bot does not have enough rights to send messages to the group`);
+      } else if (error.message.includes('parse_mode')) {
+        console.error(`[sendLeadToGroup] Markdown parsing error - check message format`);
+      } else {
+        console.error(`[sendLeadToGroup] Unknown Telegram API error`);
+      }
+      
+      if (error.stack) {
+        console.error(`[sendLeadToGroup] Stack trace:`, error.stack);
+      }
+    } else {
+      console.error(`[sendLeadToGroup] Unknown error type:`, error);
+    }
+    
+    // Re-throw to allow caller to handle if needed, but don't fail lead creation
+    throw error;
   }
 }
 
