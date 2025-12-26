@@ -13,6 +13,7 @@ interface FormData {
   fullName?: string;
   phoneNumber?: string;
   companyName?: string;
+  telegramUsername?: string;
 }
 
 const SESSION_KEY = 'hrsevil_form_session';

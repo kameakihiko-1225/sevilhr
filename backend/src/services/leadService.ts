@@ -86,7 +86,7 @@ export async function createLead(data: CreateLeadDto): Promise<LeadResponse> {
         updateData.locale = data.locale;
       }
 
-      // Add Telegram info if provided and not already set
+      // Add Telegram info if provided
       if (data.telegramId && !duplicateCheck.existingUser.telegramId) {
         updateData.telegramId = data.telegramId;
         updateData.telegramUsername = data.telegramUsername || null;
@@ -100,6 +100,10 @@ export async function createLead(data: CreateLeadDto): Promise<LeadResponse> {
         updateData.firstName = data.firstName || null;
         updateData.lastName = data.lastName || null;
         console.log(`[createLead] Updating Telegram info for user ${duplicateCheck.existingUser.id}`);
+      } else if (data.telegramUsername && !duplicateCheck.existingUser.telegramUsername) {
+        // Update telegramUsername even if telegramId is not provided yet
+        updateData.telegramUsername = data.telegramUsername;
+        console.log(`[createLead] Adding Telegram username ${data.telegramUsername} to existing user ${duplicateCheck.existingUser.id}`);
       }
 
       user = await tx.user.update({
@@ -129,6 +133,10 @@ export async function createLead(data: CreateLeadDto): Promise<LeadResponse> {
         userData.firstName = data.firstName || null;
         userData.lastName = data.lastName || null;
         console.log(`[createLead] Creating new user with Telegram ID ${data.telegramId}`);
+      } else if (data.telegramUsername) {
+        // Store telegramUsername even without telegramId (will be linked when user starts bot)
+        userData.telegramUsername = data.telegramUsername;
+        console.log(`[createLead] Creating new user with Telegram username ${data.telegramUsername}`);
       }
 
       user = await tx.user.create({

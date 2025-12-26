@@ -11,8 +11,6 @@ interface CarouselInputCTAProps {
 
 export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
   const t = getTranslations(locale);
-  const [inputValue, setInputValue] = useState('');
-  const [isFocused, setIsFocused] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
@@ -25,11 +23,9 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
 
   // Carousel animation logic (reused from AnimatedTextCarousel)
   useEffect(() => {
-    // Only animate if input is empty and not focused
-    if (inputValue.trim() !== '' || isFocused || texts.length <= 1) {
-      if (texts.length <= 1 && inputValue.trim() === '') {
-        setDisplayedText(currentText);
-      }
+    // Always animate (input is disabled, so no need to check inputValue or focus)
+    if (texts.length <= 1) {
+      setDisplayedText(currentText);
       return;
     }
 
@@ -73,17 +69,15 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
     return () => {
       if (timeout) clearTimeout(timeout);
     };
-  }, [currentIndex, isTyping, isDeleting, wordIndex, words, texts.length, currentText, inputValue, isFocused]);
+  }, [currentIndex, isTyping, isDeleting, wordIndex, words, texts.length, currentText]);
 
   // Reset when currentIndex changes
   useEffect(() => {
-    if (inputValue.trim() === '' && !isFocused) {
-      setDisplayedText('');
-      setIsTyping(true);
-      setIsDeleting(false);
-      setWordIndex(0);
-    }
-  }, [currentIndex, inputValue, isFocused]);
+    setDisplayedText('');
+    setIsTyping(true);
+    setIsDeleting(false);
+    setWordIndex(0);
+  }, [currentIndex]);
 
   const handleScrollToForm = () => {
     const formSection = document.getElementById('application-form');
@@ -92,8 +86,6 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
     }
   };
 
-  const showCarousel = inputValue.trim() === '' && !isFocused;
-
   return (
     <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-stretch sm:items-center max-w-2xl mx-auto">
       <div className="flex border-2 border-red-300 rounded-lg overflow-hidden flex-1">
@@ -101,27 +93,23 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
         <div className="relative flex-1">
           <input
             type="text"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onFocus={() => setIsFocused(true)}
-            onBlur={() => setIsFocused(false)}
+            disabled
+            readOnly
             className={cn(
               "w-full h-12 sm:h-14 px-4 sm:px-6 text-base sm:text-lg",
               "bg-white text-gray-900 outline-none",
               "placeholder:text-transparent", // Hide default placeholder
-              "focus:border-red-400"
+              "cursor-default"
             )}
           />
-          {/* Carousel text overlay */}
-          {showCarousel && (
-            <div className="absolute inset-0 flex items-center px-4 sm:px-6 pointer-events-none">
-              <span className="text-lg sm:text-xl md:text-2xl text-gray-900 font-medium transition-opacity duration-200">
-                {displayedText}
-                {/* Cursor blink effect */}
-                <span className="inline-block w-0.5 h-5 sm:h-6 md:h-7 bg-gray-900 ml-1 animate-pulse" />
-              </span>
-            </div>
-          )}
+          {/* Carousel text overlay - always visible */}
+          <div className="absolute inset-0 flex items-center px-4 sm:px-6 pointer-events-none">
+            <span className="text-lg sm:text-xl md:text-2xl text-gray-900 font-medium transition-opacity duration-200">
+              {displayedText}
+              {/* Cursor blink effect */}
+              <span className="inline-block w-0.5 h-5 sm:h-6 md:h-7 bg-gray-900 ml-1 animate-pulse" />
+            </span>
+          </div>
         </div>
         
         {/* CTA Button */}

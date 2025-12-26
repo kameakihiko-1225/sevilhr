@@ -2,12 +2,12 @@ import { normalizePhoneNumber } from '../utils/phoneNormalizer';
 import { prisma } from '../utils/prisma';
 
 export interface DuplicateCheckResult {
-  existingUser: { id: string; phoneNumber: string; telegramId?: string | null } | null;
+  existingUser: { id: string; phoneNumber: string; telegramId?: string | null; telegramUsername?: string | null } | null;
   isReturning: boolean;
   // Account merging information
   needsMerge?: boolean;
-  userByPhone?: { id: string; phoneNumber: string; telegramId?: string | null } | null;
-  userByTelegram?: { id: string; phoneNumber: string; telegramId?: string | null } | null;
+  userByPhone?: { id: string; phoneNumber: string; telegramId?: string | null; telegramUsername?: string | null } | null;
+  userByTelegram?: { id: string; phoneNumber: string; telegramId?: string | null; telegramUsername?: string | null } | null;
 }
 
 /**
@@ -23,7 +23,7 @@ export async function checkDuplicateUser(
   // Check by phone number
   const existingByPhone = await prisma.user.findUnique({
     where: { phoneNumber: normalizedPhone },
-    select: { id: true, phoneNumber: true, telegramId: true },
+    select: { id: true, phoneNumber: true, telegramId: true, telegramUsername: true },
   });
 
   // Check by Telegram ID (if available)
@@ -31,7 +31,7 @@ export async function checkDuplicateUser(
   if (telegramId) {
     existingByTelegram = await prisma.user.findUnique({
       where: { telegramId },
-      select: { id: true, phoneNumber: true, telegramId: true },
+      select: { id: true, phoneNumber: true, telegramId: true, telegramUsername: true },
     });
   }
 

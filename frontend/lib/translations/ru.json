@@ -82,9 +82,11 @@
     },
     "phoneNumber": {
       "label": "Ваш номер телефона",
-      "placeholder": "+998901234567",
-      "hint": "Привяжите Telegram для более быстрой связи",
-      "submitButton": "Связать Telegram"
+      "placeholder": "+998901234567"
+    },
+    "telegramUsername": {
+      "label": "Telegram username (необязательно)",
+      "placeholder": "@username или username"
     },
     "companyName": {
       "label": "Название вашей компании",

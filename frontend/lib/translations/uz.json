@@ -82,9 +82,11 @@
     },
     "phoneNumber": {
       "label": "Telefon raqamingiz",
-      "placeholder": "+998901234567",
-      "hint": "Tezroq bog'lanishimiz uchun Telegram akkauntingizni ulashing",
-      "submitButton": "Telegramni ulashish"
+      "placeholder": "+998901234567"
+    },
+    "telegramUsername": {
+      "label": "Telegram username (ixtiyoriy)",
+      "placeholder": "@username yoki username"
     },
     "companyName": {
       "label": "Korxonangiz nomi",

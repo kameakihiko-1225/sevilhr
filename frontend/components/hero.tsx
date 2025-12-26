@@ -208,7 +208,13 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
                 src={logo.src}
                 alt={logo.alt}
                 fill
-                className="object-contain pointer-events-none p-4 sm:p-5 md:p-6"
+                className={cn(
+                  "object-contain pointer-events-none",
+                  // Increase padding for MUU and MuSchool logos to make them appear same size as others
+                  (logo.alt === 'MUU' || logo.alt === 'MuSchool') 
+                    ? "p-6 sm:p-7 md:p-8 lg:p-9" 
+                    : "p-4 sm:p-5 md:p-6"
+                )}
                 sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, (max-width: 1024px) 176px, 192px"
               />
             </div>
@@ -260,7 +266,7 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
     { src: '/companies/egs_main-removebg-preview.png', alt: 'EGS', fallback: 'EGS' },
     { src: '/companies/yosh olim.svg', alt: 'Yosh Olim', fallback: 'YO' },
     { src: '/companies/Logo white school.png', alt: 'MuSchool', fallback: 'MS' },
-    { src: '/companies/tez go.jpg', alt: 'Tez Go', fallback: 'TG' },
+    { src: '/companies/Tezz Go.png', alt: 'Tez Go', fallback: 'TG' },
   ];
 
   const headlineParts = parseHeadline(t.hero.headline, locale);

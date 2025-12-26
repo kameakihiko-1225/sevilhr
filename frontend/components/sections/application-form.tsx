@@ -28,6 +28,7 @@ type FormData = {
   fullName: string;
   phoneNumber: string;
   companyName?: string;
+  telegramUsername?: string;
 };
 
 interface ApplicationFormProps {
@@ -39,7 +40,6 @@ const TOTAL_STAGES = 9;
 
 export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationFormProps) {
   const [currentStage, setCurrentStage] = useState(1);
-  const [wantsTelegram, setWantsTelegram] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
@@ -57,6 +57,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     fullName: z.string().min(2, t.validation?.nameMin || 'Name must be at least 2 characters'),
     phoneNumber: z.string().min(9, t.validation?.phoneInvalid || 'Phone number must be at least 9 characters'),
     companyName: z.string().optional(),
+    telegramUsername: z.string().optional(),
   });
 
   const {
@@ -109,7 +110,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
         return !!(fullName && typeof fullName === 'string' && fullName.trim().length > 0) && 
                !!(phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim().length > 0);
       case 9:
-        return wantsTelegram !== null && wantsTelegram !== undefined;
+        return true; // Stage 9 is always valid (telegramUsername is optional)
       default:
         return false;
     }
@@ -256,17 +257,17 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
       // Only submit PARTIAL if form is NOT fully filled
       const isFull = isFullFormFilled();
       if (!isFull) {
-        const location = (formValues.location || sessionData.location) as 'Toshkent shahri' | 'Boshqa viloyatda';
-        const fullName = formValues.fullName || sessionData.fullName || '';
-        const phoneNumber = formValues.phoneNumber || sessionData.phoneNumber || '';
+      const location = (formValues.location || sessionData.location) as 'Toshkent shahri' | 'Boshqa viloyatda';
+      const fullName = formValues.fullName || sessionData.fullName || '';
+      const phoneNumber = formValues.phoneNumber || sessionData.phoneNumber || '';
 
-        if (location && fullName && phoneNumber) {
-          // Create minimal data for PARTIAL submission
-          const partialData: Partial<FormData> & { location: 'Toshkent shahri' | 'Boshqa viloyatda'; fullName: string; phoneNumber: string } = {
-            location,
-            fullName,
-            phoneNumber,
-          };
+      if (location && fullName && phoneNumber) {
+        // Create minimal data for PARTIAL submission
+        const partialData: Partial<FormData> & { location: 'Toshkent shahri' | 'Boshqa viloyatda'; fullName: string; phoneNumber: string } = {
+          location,
+          fullName,
+          phoneNumber,
+        };
           await submitForm(partialData as any, 'PARTIAL', false);
         }
       }
@@ -292,10 +293,16 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     }
     
     try {
+      // Prepare data for API, including telegramUsername if provided
+      const submitData: any = { ...data, status, locale };
+      if (data.telegramUsername) {
+        submitData.telegramUsername = data.telegramUsername;
+      }
+      
       const response = await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, status, locale }),
+        body: JSON.stringify(submitData),
       });
 
       if (!response.ok) {
@@ -307,7 +314,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
       
       // Only clear session for successful FULL submissions (not for auto-submissions)
       if (status === 'FULL' || status === 'FULL_WITHOUT_TELEGRAM') {
-        clearSession();
+      clearSession();
       }
 
       // Log result for debugging
@@ -351,16 +358,9 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
   };
 
   const onSubmit = (data: FormData) => {
-    // For stage 9, if wantsTelegram is false, submit as FULL_WITHOUT_TELEGRAM
-    if (currentStage === 9 && wantsTelegram === false) {
-      submitForm(data, 'FULL_WITHOUT_TELEGRAM', false);
-    } else if (currentStage === 9 && wantsTelegram === true) {
-      // This is handled by the Share Telegram button click handler
+    // Stage 9 is handled by the Finish button click handler
+    // Other stages don't need submission
       return;
-    } else {
-      // Fallback: submit as FULL_WITHOUT_TELEGRAM if no preference
-      submitForm(data, 'FULL_WITHOUT_TELEGRAM', false);
-    }
   };
 
   const handleStageClick = (stage: number) => {
@@ -377,7 +377,6 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     if (currentStage > 1) {
       setCurrentStage(currentStage - 1);
       if (currentStage === 9) {
-        setWantsTelegram(null);
       }
     }
   };
@@ -745,104 +744,30 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               )}
             </div>
 
-            {/* Telegram Instruction Text */}
-            <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-300 p-4 sm:p-6 shadow-sm">
-              <p className="text-base sm:text-lg md:text-xl text-gray-900 font-medium leading-relaxed">{t.form.phoneNumber.hint}</p>
-            </div>
-
-            {/* Telegram Button */}
-            {(wantsTelegram === null || isSubmitting) && (
-              <Button
-                type="button"
-                disabled={isSubmitting}
-                onClick={async () => {
-                  if (isSubmitting) return;
-                  // Validate form first
-                  const isValid = await trigger();
-                  if (!isValid) {
-                    return;
+            {/* Telegram Username Input (Optional) */}
+            <div>
+              <Input
+                {...register('telegramUsername')}
+                type="text"
+                placeholder={t.form.telegramUsername.placeholder}
+                value={formValues.telegramUsername || sessionData.telegramUsername || ''}
+                onChange={(e) => {
+                  let value = e.target.value.trim();
+                  // Remove @ if user types it
+                  if (value.startsWith('@')) {
+                    value = value.substring(1);
                   }
-                  
-                  setWantsTelegram(true);
-                  
-                  // Merge formValues and sessionData, prioritizing formValues
-                  const currentData: FormData = {
-                    location: (formValues.location || sessionData.location) as 'Toshkent shahri' | 'Boshqa viloyatda',
-                    companyType: formValues.companyType || sessionData.companyType || '',
-                    roleInCompany: formValues.roleInCompany || sessionData.roleInCompany || '',
-                    interests: (formValues.interests || sessionData.interests || []) as string[],
-                    companyDescription: formValues.companyDescription || sessionData.companyDescription || '',
-                    annualTurnover: formValues.annualTurnover || sessionData.annualTurnover || '',
-                    numberOfEmployees: formValues.numberOfEmployees || sessionData.numberOfEmployees || '',
-                    fullName: formValues.fullName || sessionData.fullName || '',
-                    phoneNumber: formValues.phoneNumber || sessionData.phoneNumber || '',
-                    companyName: formValues.companyName || sessionData.companyName,
-                  };
-                  
-                  if (currentData.location && currentData.fullName && currentData.phoneNumber) {
-                    setIsSubmitting(true);
-                    try {
-                      // Generate session ID
-                      const sessionId = `session_${crypto.randomUUID()}`;
-                      
-                      // Store form data temporarily
-                      const storeResponse = await fetch('/api/leads/pending', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          sessionId,
-                          formData: { ...currentData, status: 'FULL', locale },
-                        }),
-                      });
-                      
-                      if (!storeResponse.ok) {
-                        throw new Error('Failed to store form data');
-                      }
-                      
-                      // Get bot URL and redirect
-                      const botUrl = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/hr_sevil_lead_bot';
-                      const redirectUrl = `${botUrl}?start=${sessionId}`;
-                      
-                      console.log('[ApplicationForm] Storing form data and redirecting to bot:', redirectUrl);
-                      
-                      // Clear session before redirect
-                      clearSession();
-                      
-                      // Redirect to Telegram bot
-                      window.location.href = redirectUrl;
-                    } catch (error) {
-                      console.error('[ApplicationForm] Error storing form data:', error);
-                      setIsSubmitting(false);
-                      setWantsTelegram(null);
-                      // Fallback: submit normally
-                      await submitForm(currentData, 'FULL', true);
-                    }
-                  }
+                  setValue('telegramUsername', value);
+                  updateField('telegramUsername', value);
                 }}
-                className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-lg bg-red-600 hover:bg-red-700 text-white min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    {'Submitting...'}
-                  </span>
-                ) : (
-                  <>
-                    {t.form.phoneNumber.submitButton}
-                    <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-                  </>
-                )}
-              </Button>
-            )}
+                className="h-14 sm:h-16 text-lg sm:text-xl md:text-2xl px-4 sm:px-6 border-2 focus:border-red-600"
+              />
+            </div>
 
             {/* CEO Comment */}
             <CEOComment stage={9} locale={locale} />
             
-            {/* Finish Button - shown when wantsTelegram is null or submitting */}
-            {(wantsTelegram === null || isSubmitting) && (
+            {/* Finish Button */}
               <div className="mt-6 sm:mt-8">
                 <Button
                   type="button"
@@ -855,7 +780,6 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                       return;
                     }
                     
-                    setWantsTelegram(false);
                     // Merge formValues and sessionData, prioritizing formValues
                     const currentData: FormData = {
                       location: (formValues.location || sessionData.location) as 'Toshkent shahri' | 'Boshqa viloyatda',
@@ -868,10 +792,53 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                       fullName: formValues.fullName || sessionData.fullName || '',
                       phoneNumber: formValues.phoneNumber || sessionData.phoneNumber || '',
                       companyName: formValues.companyName || sessionData.companyName,
+                    telegramUsername: formValues.telegramUsername || sessionData.telegramUsername,
                     };
+                  
                     if (currentData.location && currentData.fullName && currentData.phoneNumber) {
-                      // Tugatish/Finish button: submit as FULL_WITHOUT_TELEGRAM
-                      await submitForm(currentData, 'FULL_WITHOUT_TELEGRAM', false);
+                    setIsSubmitting(true);
+                    try {
+                      // Determine status: FULL if telegramUsername provided, otherwise FULL_WITHOUT_TELEGRAM
+                      const status = currentData.telegramUsername ? 'FULL' : 'FULL_WITHOUT_TELEGRAM';
+                      
+                      if (status === 'FULL' && currentData.telegramUsername) {
+                        // Generate session ID
+                        const sessionId = `session_${crypto.randomUUID()}`;
+                        
+                        // Store form data temporarily
+                        const storeResponse = await fetch('/api/leads/pending', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            sessionId,
+                            formData: { ...currentData, status, locale },
+                          }),
+                        });
+                        
+                        if (!storeResponse.ok) {
+                          throw new Error('Failed to store form data');
+                        }
+                        
+                        // Get bot URL and redirect
+                        const botUrl = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/hr_sevil_lead_bot';
+                        const redirectUrl = `${botUrl}?start=${sessionId}`;
+                        
+                        console.log('[ApplicationForm] Storing form data and redirecting to bot:', redirectUrl);
+                        
+                        // Clear session before redirect
+                        clearSession();
+                        
+                        // Redirect to Telegram bot
+                        window.location.href = redirectUrl;
+                      } else {
+                        // Submit without Telegram redirect
+                        await submitForm(currentData, status, false);
+                      }
+                    } catch (error) {
+                      console.error('[ApplicationForm] Error submitting form:', error);
+                      setIsSubmitting(false);
+                      alert('Error submitting form. Please try again.');
+                    }
                     }
                   }}
                   className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-lg bg-red-600 hover:bg-red-700 text-white min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -892,7 +859,6 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                   )}
                 </Button>
               </div>
-            )}
           </div>
         );
 
@@ -986,8 +952,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               {/* Form content */}
               <div className="min-h-[300px] pt-2 sm:pt-4 pb-6 sm:pb-8">{renderStage()}</div>
 
-              {/* Navigation buttons - Hide on stage 9 if wantsTelegram is null */}
-              {!(currentStage === 9 && wantsTelegram === null) && (
+              {/* Navigation buttons - Show previous button on stage 9, hide next button */}
+              {currentStage < TOTAL_STAGES && (
                 <div className="flex justify-between mt-6 sm:mt-8 gap-3 sm:gap-4 pb-0">
                   <Button
                     type="button"
@@ -1015,19 +981,6 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   ) : null}
-                </div>
-              )}
-              {/* Finish button for stage 9 - with spacing matching navigation buttons */}
-              {currentStage === 9 && wantsTelegram === false && (
-                <div className="flex justify-between mt-6 sm:mt-8 gap-3 sm:gap-4 pb-0">
-                  <div></div>
-                  <Button 
-                    type="submit"
-                    className="h-12 sm:h-11 px-5 sm:px-6 text-base sm:text-lg rounded-full bg-red-600 hover:bg-red-700 text-white min-h-[48px] sm:min-h-[44px]"
-                  >
-                    {t.form.finish}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
                 </div>
               )}
             </form>
