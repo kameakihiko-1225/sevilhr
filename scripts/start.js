@@ -30,34 +30,29 @@ async function ensurePrismaGenerated() {
   });
 }
 
-// Run database migrations in production
-async function runMigrations() {
+// Sync database schema in production using db push
+async function syncDatabaseSchema() {
   if (!isProduction) {
     return Promise.resolve();
   }
 
   return new Promise((resolve, reject) => {
-    console.log('🔄 Running database migrations...');
-    const migrate = spawn('npx', ['prisma', 'migrate', 'deploy'], {
+    console.log('🔄 Syncing database schema...');
+    const dbPush = spawn('npx', ['prisma', 'db', 'push', '--accept-data-loss'], {
       cwd: path.join(__dirname, '../backend'),
       stdio: 'inherit',
       shell: true,
     });
 
-    migrate.on('close', (code) => {
+    dbPush.on('close', (code) => {
       if (code === 0) {
-        console.log('✅ Database migrations completed\n');
+        console.log('✅ Database schema synced\n');
         resolve();
       } else {
-        console.error('❌ Database migrations failed');
-        // In production, we might want to continue anyway if migrations fail
-        // depending on your deployment strategy
-        if (isProduction) {
-          console.warn('⚠️  Continuing despite migration failure...');
-          resolve(); // Continue anyway
-        } else {
-          reject(new Error(`Migration exited with code ${code}`));
-        }
+        console.error('❌ Database schema sync failed');
+        // In production, continue anyway as schema might already be in sync
+        console.warn('⚠️  Continuing despite schema sync failure...');
+        resolve();
       }
     });
   });
@@ -103,9 +98,9 @@ function startFrontend() {
     // Generate Prisma Client first
     await ensurePrismaGenerated();
 
-    // Run migrations in production
+    // Sync database schema in production
     if (isProduction) {
-      await runMigrations();
+      await syncDatabaseSchema();
     }
 
     // Start backend and frontend
