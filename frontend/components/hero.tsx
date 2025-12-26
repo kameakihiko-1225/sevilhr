@@ -210,8 +210,8 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
                 fill
                 className={cn(
                   "object-contain pointer-events-none",
-                  // Increase padding for MUU and MuSchool logos to make them appear same size as others
-                  (logo.alt === 'MUU' || logo.alt === 'MuSchool') 
+                  // Increase padding for MUU, MuSchool, and Cert Main logos to make them appear same size as others
+                  (logo.alt === 'MUU' || logo.alt === 'MuSchool' || logo.alt === 'Cert Main') 
                     ? "p-4 sm:p-5 md:p-6 lg:p-7 xl:p-8" 
                     : "p-3 sm:p-4 md:p-5 lg:p-6"
                 )}
