@@ -21,7 +21,7 @@ export async function handleMessage(ctx: Context, bot: Bot) {
 
     // Check if user is in rejection flow (waiting for custom reason)
     if (rejectionState) {
-      const { leadId, rejectedBy } = rejectionState;
+      const { leadId, rejectedBy, menuMessageId, menuChatId } = rejectionState;
       const rejectionReason = ctx.message.text.trim();
 
       if (!rejectionReason || rejectionReason.length === 0) {
@@ -96,6 +96,16 @@ export async function handleMessage(ctx: Context, bot: Bot) {
       });
       if (!(userWithChannel as any)?.channelJoined) {
         await scheduleInitialReminder(lead.userId);
+      }
+
+      // Delete the rejection menu message if it exists
+      if (menuMessageId && menuChatId) {
+        try {
+          await bot.api.deleteMessage(menuChatId, menuMessageId);
+        } catch (error) {
+          console.error('Error deleting rejection menu message:', error);
+          // Continue even if deletion fails
+        }
       }
 
       // Clear rejection state

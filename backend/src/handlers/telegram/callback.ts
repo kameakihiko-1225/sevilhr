@@ -3,7 +3,7 @@ import { LeadStatus } from '@prisma/client';
 import { updateLeadStatus, formatRejectionMessageForGroup } from '../../services/bot/leadService';
 import { notifyUserAboutDecision } from '../../services/bot/notificationService';
 import { scheduleInitialReminder } from '../../services/bot/channelReminderService';
-import { setRejectionState } from '../../utils/rejectionState';
+import { setRejectionState, getRejectionState, clearRejectionState } from '../../utils/rejectionState';
 import { prisma } from '../../utils/prisma';
 import { t, getUserLocale } from '../../utils/translations';
 
@@ -39,6 +39,33 @@ export async function handleCallback(ctx: Context, bot: Bot) {
 
   const data = ctx.callbackQuery.data;
   const userId = ctx.from.id.toString();
+  
+  // Check if callback is from a group chat
+  const isGroupChat = ctx.chat?.type === 'group' || ctx.chat?.type === 'supergroup';
+  
+  // Helper function to send message (private message if in group, reply if in private chat)
+  const sendMessage = async (text: string, options?: any) => {
+    if (isGroupChat) {
+      // Send private message to user
+      try {
+        return await bot.api.sendMessage(parseInt(userId), text, options);
+      } catch (error: any) {
+        // If bot can't send private message (user hasn't started bot), answer callback with notification
+        if (error.error_code === 403 || error.description?.includes('bot was blocked')) {
+          await ctx.answerCallbackQuery({
+            text: text.length > 200 ? text.substring(0, 200) : text,
+            show_alert: true,
+          });
+          return null;
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      // Private chat - use reply
+      return await ctx.reply(text, options);
+    }
+  };
 
   await ctx.answerCallbackQuery();
 
@@ -150,7 +177,7 @@ export async function handleCallback(ctx: Context, bot: Bot) {
       }
     } catch (error) {
       console.error('Error accepting lead:', error);
-      await ctx.reply('Error accepting lead. Please try again.');
+      await sendMessage('Error accepting lead. Please try again.');
     }
   } else if (data.startsWith('reject_')) {
     const leadId = data.replace('reject_', '');
@@ -188,19 +215,26 @@ export async function handleCallback(ctx: Context, bot: Bot) {
       ],
     };
 
-    await ctx.reply(t(locale, 'callback.rejectReason'), {
+    // Send rejection menu and store message ID for later deletion
+    const menuMessage = await sendMessage(t(locale, 'callback.rejectReason'), {
       reply_markup: keyboard,
     });
+    
+    // Store menu message ID in rejection state for later deletion
+    if (menuMessage && 'message_id' in menuMessage && 'chat' in menuMessage) {
+      const menuChatId = menuMessage.chat.id;
+      setRejectionState(userId, leadId, userId, menuMessage.message_id, menuChatId);
+    }
   } else if (data.startsWith('reject_reason_')) {
     // Handle rejection reason selection
     // Format: reject_reason_{leadId}|{reasonCode}
     // Use | as delimiter to avoid issues with UUID format
     const parts = data.replace('reject_reason_', '').split('|');
-    if (parts.length !== 2) {
-      console.error(`[handleCallback] Invalid reject_reason format: ${data}`);
-      await ctx.reply('Error: Invalid rejection reason format.');
-      return;
-    }
+      if (parts.length !== 2) {
+        console.error(`[handleCallback] Invalid reject_reason format: ${data}`);
+        await sendMessage('Error: Invalid rejection reason format.');
+        return;
+      }
     const leadId = parts[0];
     const reasonCode = parts[1];
     
@@ -217,22 +251,36 @@ export async function handleCallback(ctx: Context, bot: Bot) {
       });
 
       if (!lead) {
-        await ctx.reply(t('uz', 'callback.leadNotFound'));
+        await sendMessage(t('uz', 'callback.leadNotFound'));
         return;
       }
 
       // Get user's locale
       const locale = await getUserLocale(lead.userId);
 
+      // Get existing rejection state to preserve menu message info
+      const existingState = getRejectionState(userId);
+      const menuMessageId = existingState?.menuMessageId;
+      const menuChatId = existingState?.menuChatId;
+
       if (reasonCode === 'other') {
-        // Store rejection state (including rejectedBy) and ask for custom reason
-        setRejectionState(userId, leadId, userId);
-        await ctx.reply(t(locale, 'callback.pleaseProvideReason'), {
+        // Store rejection state (including rejectedBy and menu message info) and ask for custom reason
+        setRejectionState(userId, leadId, userId, menuMessageId, menuChatId);
+        await sendMessage(t(locale, 'callback.pleaseProvideReason'), {
           reply_markup: {
             force_reply: true,
           },
         });
       } else {
+        // Delete the rejection menu message if it exists
+        if (menuMessageId && menuChatId) {
+          try {
+            await bot.api.deleteMessage(menuChatId, menuMessageId);
+          } catch (error) {
+            console.error('Error deleting rejection menu message:', error);
+            // Continue even if deletion fails
+          }
+        }
         // Use predefined reason (translated)
         const rejectionReason = t(locale, `callback.${reasonCode === 'incomplete' ? 'incompleteInfo' : reasonCode === 'not_qualified' ? 'notQualified' : reasonCode === 'duplicate' ? 'duplicate' : 'other'}`) || 'Not specified';
         
@@ -252,7 +300,7 @@ export async function handleCallback(ctx: Context, bot: Bot) {
         });
 
         if (!refetchedLead) {
-          await ctx.reply(t(locale, 'callback.leadNotFound'));
+          await sendMessage(t(locale, 'callback.leadNotFound'));
           return;
         }
 
@@ -287,7 +335,10 @@ export async function handleCallback(ctx: Context, bot: Bot) {
           await scheduleInitialReminder(refetchedLead.userId);
         }
 
-        await ctx.reply(t(locale, 'callback.rejectedSuccess'));
+        await sendMessage(t(locale, 'callback.rejectedSuccess'));
+        
+        // Clear rejection state after successful rejection
+        clearRejectionState(userId);
       }
     } catch (error) {
       console.error('Error processing rejection:', error);
@@ -309,7 +360,7 @@ export async function handleCallback(ctx: Context, bot: Bot) {
       } catch {
         // Use default
       }
-      await ctx.reply(t(locale, 'callback.errorProcessing'));
+      await sendMessage(t(locale, 'callback.errorProcessing'));
     }
   }
 }
