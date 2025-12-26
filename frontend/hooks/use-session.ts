@@ -67,7 +67,7 @@ export function useSession() {
     setTimerStarted(false);
   }, []);
 
-  const hasRequiredFields = formData.location && formData.fullName && formData.phoneNumber;
+  const hasRequiredFields = Boolean(formData.location && formData.fullName && formData.phoneNumber);
 
   return {
     formData,
