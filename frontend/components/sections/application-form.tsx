@@ -764,7 +764,6 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                   }
                   
                   setWantsTelegram(true);
-                  setIsSubmitting(true);
                   
                   // Merge formValues and sessionData, prioritizing formValues
                   const currentData: FormData = {
@@ -781,6 +780,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                   };
                   
                   if (currentData.location && currentData.fullName && currentData.phoneNumber) {
+                    setIsSubmitting(true);
                     try {
                       // Generate session ID
                       const sessionId = `session_${crypto.randomUUID()}`;

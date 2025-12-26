@@ -123,9 +123,9 @@ export async function sendLeadToGroup(
   const messagePrefix = lead.status === LeadStatus.RETURNING 
     ? `📋 *Returning Lead*` 
     : lead.status === LeadStatus.FULL_WITHOUT_TELEGRAM
-    ? `📋 *New Lead - Without Telegram*`
+    ? `📋 *New Lead \\- Without Telegram*`
     : lead.status === LeadStatus.DID_NOT_CLICK_SUBMIT_BUTTON
-    ? `📋 *Lead - Did Not Click Submit Button*`
+    ? `📋 *Lead \\- Did Not Click Submit Button*`
     : `📋 *New Lead*`;
   
   let message = `${messagePrefix}\n\n`;
@@ -279,7 +279,7 @@ export function formatRejectionMessageForGroup(
     range5: '100+',
   };
 
-  let message = `📋 *Lead - REJECTED*\n\n`;
+  let message = `📋 *Lead \\- REJECTED*\n\n`;
   message += `📍 Location: ${escapeMarkdown(lead.location)}\n`;
   if (lead.companyType) {
     const companyTypeText = companyTypeMap[lead.companyType as string] || lead.companyType;
@@ -419,13 +419,13 @@ export async function updateLeadMessageWithTelegram(
   const messagePrefix = lead.status === LeadStatus.RETURNING 
     ? `📋 *Returning Lead*` 
     : lead.status === LeadStatus.ACCEPTED
-    ? `📋 *Lead - ACCEPTED*`
+    ? `📋 *Lead \\- ACCEPTED*`
     : lead.status === LeadStatus.REJECTED
-    ? `📋 *Lead - REJECTED*`
+    ? `📋 *Lead \\- REJECTED*`
     : lead.status === LeadStatus.FULL_WITHOUT_TELEGRAM
-    ? `📋 *New Lead - Without Telegram*`
+    ? `📋 *New Lead \\- Without Telegram*`
     : lead.status === LeadStatus.DID_NOT_CLICK_SUBMIT_BUTTON
-    ? `📋 *Lead - Did Not Click Submit Button*`
+    ? `📋 *Lead \\- Did Not Click Submit Button*`
     : `📋 *New Lead*`;
 
   let message = `${messagePrefix}\n\n`;

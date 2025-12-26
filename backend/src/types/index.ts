@@ -21,6 +21,11 @@ export interface CreateLeadDto {
   companyName?: string;
   locale?: string;
   status: 'PARTIAL' | 'FULL' | 'FULL_WITHOUT_TELEGRAM' | 'DID_NOT_CLICK_SUBMIT_BUTTON';
+  // Telegram account information (optional, used when creating lead from bot session flow)
+  telegramId?: string;
+  telegramUsername?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface LeadResponse {

@@ -94,7 +94,7 @@ export async function handleCallback(ctx: Context, bot: Bot) {
           range5: '100+',
         };
 
-        let message = `📋 *Lead - ACCEPTED*\n\n`;
+        let message = `📋 *Lead \\- ACCEPTED*\n\n`;
         message += `📍 Location: ${escapeMarkdown(lead.location)}\n`;
         if (lead.companyType) {
           const companyTypeText = companyTypeMap[lead.companyType as string] || lead.companyType;
@@ -294,14 +294,17 @@ export async function handleCallback(ctx: Context, bot: Bot) {
       // Try to get locale
       let locale: 'uz' | 'en' | 'ru' = 'uz';
       try {
-        const parts = data.replace('reject_reason_', '').split('_');
-        const leadId = parts.slice(0, -1).join('_');
-        const lead = await prisma.lead.findUnique({
-          where: { id: leadId },
-          include: { user: true },
-        });
-        if (lead) {
-          locale = await getUserLocale(lead.userId);
+        // Parse using the new format with | delimiter
+        const parts = data.replace('reject_reason_', '').split('|');
+        if (parts.length === 2) {
+          const leadId = parts[0];
+          const lead = await prisma.lead.findUnique({
+            where: { id: leadId },
+            include: { user: true },
+          });
+          if (lead) {
+            locale = await getUserLocale(lead.userId);
+          }
         }
       } catch {
         // Use default
