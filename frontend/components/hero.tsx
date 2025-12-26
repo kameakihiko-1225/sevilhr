@@ -3,10 +3,8 @@
 import AnimatedGridPattern from "@/components/ui/animated-grid-pattern";
 import { cn } from "@/lib/utils";
 import { getTranslations, Locale } from "@/lib/i18n";
-import { AnimatedTextCarousel } from "@/components/sections/animated-text-carousel";
+import { CarouselInputCTA } from "@/components/sections/carousel-input-cta";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
 import { useRef, useEffect, useState } from 'react';
 
 interface HeroProps {
@@ -298,24 +296,8 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
           ))}
         </h1>
         
-        {/* Carousel text */}
-        <div className="mb-6 sm:mb-8">
-          <AnimatedTextCarousel texts={t.hero.rotating} locale={locale} />
-        </div>
-
-        {/* CTA Button - Extra large width, reduced height */}
-        <Button 
-          onClick={() => {
-            const formSection = document.getElementById('application-form');
-            if (formSection) {
-              formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }}
-          className="rounded-lg bg-red-600 hover:bg-red-700 text-white mb-8 sm:mb-10 cursor-pointer text-lg sm:text-xl px-8 sm:px-12 md:px-16 py-3 sm:py-4 h-12 sm:h-auto min-h-[48px] font-semibold"
-        >
-          {t.hero.cta}
-          <ArrowRight className="ml-2 sm:ml-3 h-4 w-4 sm:h-5 sm:w-5" />
-        </Button>
+        {/* Carousel Input CTA Component */}
+        <CarouselInputCTA locale={locale} />
 
         {/* Partner Logos Carousel */}
         <HeroLogoCarousel logos={partnerLogos} />
