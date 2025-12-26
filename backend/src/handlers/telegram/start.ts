@@ -76,40 +76,90 @@ export async function handleStart(ctx: Context) {
 
           // Refetch the lead with updated user to ensure we have the latest data
           // This is important because the user was just updated with Telegram info
+          // Add a small delay to ensure database transaction is committed
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
           const updatedLead = await prisma.lead.findUnique({
             where: { id: startParam },
             include: { user: true },
           });
 
           if (!updatedLead) {
-            console.warn(`Lead ${startParam} not found after refetch`);
+            console.warn(`[handleStart] Lead ${startParam} not found after refetch`);
           } else {
             // Log user update status
+            console.log(`[handleStart] Refetched lead ${updatedLead.id}`);
+            console.log(`[handleStart] Lead user ID: ${updatedLead.userId}`);
+            console.log(`[handleStart] User from database - Telegram ID: ${updatedLead.user.telegramId || 'NOT SET'}, Username: ${updatedLead.user.telegramUsername || 'NOT SET'}`);
+            
             if (leadUser && leadUser.telegramId) {
-              console.log(`User ${leadUser.id} updated with Telegram ID: ${leadUser.telegramId}, Username: ${leadUser.telegramUsername || 'N/A'}`);
+              console.log(`[handleStart] leadUser object - Telegram ID: ${leadUser.telegramId}, Username: ${leadUser.telegramUsername || 'N/A'}`);
             }
 
-            // Update the Telegram group message with Telegram contact info if message exists
-            if (updatedLead.telegramChatId && updatedLead.telegramMessageId && bot) {
-              try {
-                const { updateLeadMessageWithTelegram } = await import('../../services/bot/leadService');
-                console.log(`[handleStart] Attempting to update lead message ${updatedLead.telegramMessageId} with Telegram contact info for lead ${updatedLead.id}`);
-                console.log(`[handleStart] User Telegram ID: ${updatedLead.user.telegramId || 'NOT SET'}, Username: ${updatedLead.user.telegramUsername || 'N/A'}`);
-                await updateLeadMessageWithTelegram(bot, updatedLead.id);
-                console.log(`[handleStart] Successfully updated lead message with Telegram contact info for lead ${updatedLead.id}`);
-              } catch (error) {
-                console.error(`[handleStart] Error updating lead message with Telegram info for lead ${updatedLead.id}:`, error);
-                if (error instanceof Error) {
-                  console.error('[handleStart] Error details:', error.message, error.stack);
+            // Verify user has Telegram info before attempting to update message
+            if (!updatedLead.user.telegramId) {
+              console.warn(`[handleStart] User ${updatedLead.userId} does not have telegramId after update. User update may have failed.`);
+              console.warn(`[handleStart] Attempting to verify user update...`);
+              
+              // Try to refetch user directly to verify
+              const verifyUser = await prisma.user.findUnique({
+                where: { id: updatedLead.userId },
+                select: { id: true, telegramId: true, telegramUsername: true },
+              });
+              
+              if (verifyUser) {
+                console.log(`[handleStart] Verified user - Telegram ID: ${verifyUser.telegramId || 'NOT SET'}, Username: ${verifyUser.telegramUsername || 'NOT SET'}`);
+                
+                if (verifyUser.telegramId) {
+                  // User has Telegram ID, refetch lead again
+                  const reFetchedLead = await prisma.lead.findUnique({
+                    where: { id: startParam },
+                    include: { user: true },
+                  });
+                  
+                  if (reFetchedLead && reFetchedLead.user.telegramId) {
+                    console.log(`[handleStart] After re-fetch, user has Telegram ID: ${reFetchedLead.user.telegramId}`);
+                    // Update message with re-fetched lead
+                    if (reFetchedLead.telegramChatId && reFetchedLead.telegramMessageId && bot) {
+                      try {
+                        const { updateLeadMessageWithTelegram } = await import('../../services/bot/leadService');
+                        console.log(`[handleStart] Attempting to update lead message ${reFetchedLead.telegramMessageId} with Telegram contact info for lead ${reFetchedLead.id}`);
+                        await updateLeadMessageWithTelegram(bot, reFetchedLead.id);
+                        console.log(`[handleStart] ✅ Successfully updated lead message with Telegram contact info for lead ${reFetchedLead.id}`);
+                      } catch (error) {
+                        console.error(`[handleStart] ❌ Error updating lead message with Telegram info for lead ${reFetchedLead.id}:`, error);
+                        if (error instanceof Error) {
+                          console.error('[handleStart] Error details:', error.message, error.stack);
+                        }
+                      }
+                    }
+                  }
                 }
-                // Don't fail the flow if message update fails
               }
             } else {
-              if (!updatedLead.telegramChatId || !updatedLead.telegramMessageId) {
-                console.warn(`[handleStart] Cannot update lead message: lead ${updatedLead.id} missing telegramChatId (${updatedLead.telegramChatId || 'missing'}) or telegramMessageId (${updatedLead.telegramMessageId || 'missing'})`);
-              }
-              if (!bot) {
-                console.warn('[handleStart] Cannot update lead message: bot is not initialized');
+              // User has Telegram ID, proceed with message update
+              // Update the Telegram group message with Telegram contact info if message exists
+              if (updatedLead.telegramChatId && updatedLead.telegramMessageId && bot) {
+                try {
+                  const { updateLeadMessageWithTelegram } = await import('../../services/bot/leadService');
+                  console.log(`[handleStart] Attempting to update lead message ${updatedLead.telegramMessageId} with Telegram contact info for lead ${updatedLead.id}`);
+                  console.log(`[handleStart] User Telegram ID: ${updatedLead.user.telegramId}, Username: ${updatedLead.user.telegramUsername || 'N/A'}`);
+                  await updateLeadMessageWithTelegram(bot, updatedLead.id);
+                  console.log(`[handleStart] ✅ Successfully updated lead message with Telegram contact info for lead ${updatedLead.id}`);
+                } catch (error) {
+                  console.error(`[handleStart] ❌ Error updating lead message with Telegram info for lead ${updatedLead.id}:`, error);
+                  if (error instanceof Error) {
+                    console.error('[handleStart] Error details:', error.message, error.stack);
+                  }
+                  // Don't fail the flow if message update fails
+                }
+              } else {
+                if (!updatedLead.telegramChatId || !updatedLead.telegramMessageId) {
+                  console.warn(`[handleStart] Cannot update lead message: lead ${updatedLead.id} missing telegramChatId (${updatedLead.telegramChatId || 'missing'}) or telegramMessageId (${updatedLead.telegramMessageId || 'missing'})`);
+                }
+                if (!bot) {
+                  console.warn('[handleStart] Cannot update lead message: bot is not initialized');
+                }
               }
             }
 

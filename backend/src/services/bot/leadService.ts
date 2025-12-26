@@ -67,8 +67,17 @@ export async function sendLeadToGroup(
   
   console.log(`[sendLeadToGroup] Lead status is ${lead.status}, proceeding to send full data to group`);
 
+  // Create clickable Telegram contact link for initial message
   const telegramContact = lead.user.telegramId 
-    ? `\n📱 Telegram: @${escapeMarkdown(lead.user.telegramUsername || lead.user.telegramId)}`
+    ? (() => {
+        const telegramUserId = lead.user.telegramId;
+        // Don't escape @ symbol, but escape other special characters in username
+        const displayName = lead.user.telegramUsername 
+          ? `@${lead.user.telegramUsername.replace(/[_\*\[\]\(\)~`>#\+\-=\|\{\}\.\\!]/g, '\\$&')}` 
+          : `User ${escapeMarkdown(telegramUserId)}`;
+        // Use tg://user?id= format for clickable user links in Telegram Markdown
+        return `\n📱 Telegram: [${displayName}](tg://user?id=${telegramUserId})`;
+      })()
     : '';
 
   const companyTypeMap: Record<string, string> = {
@@ -346,8 +355,26 @@ export async function updateLeadMessageWithTelegram(
     return;
   }
 
-  const telegramContact = `\n📱 Telegram: @${escapeMarkdown(lead.user.telegramUsername || lead.user.telegramId)}`;
+  // Create clickable Telegram contact link
+  // Use tg://user?id=USER_ID format for clickable user links in Telegram
+  const telegramUsernameOrId = lead.user.telegramUsername || lead.user.telegramId;
+  const telegramUserId = lead.user.telegramId;
+  
+  // Create clickable link: [@username](tg://user?id=USER_ID)
+  // This allows sales managers to click and directly message the user
+  let telegramContact = '';
+  if (telegramUserId) {
+    // For display name, use @username if available, otherwise show User ID
+    // Don't escape @ symbol, but escape other special characters in username
+    const displayName = lead.user.telegramUsername 
+      ? `@${lead.user.telegramUsername.replace(/[_\*\[\]\(\)~`>#\+\-=\|\{\}\.\\!]/g, '\\$&')}` 
+      : `User ${escapeMarkdown(telegramUserId)}`;
+    // Use tg://user?id= format for clickable user links in Telegram Markdown
+    telegramContact = `\n📱 Telegram: [${displayName}](tg://user?id=${telegramUserId})`;
+  }
+  
   console.log(`[updateLeadMessageWithTelegram] Will add Telegram contact: ${telegramContact.trim()}`);
+  console.log(`[updateLeadMessageWithTelegram] Telegram User ID: ${telegramUserId}, Username: ${lead.user.telegramUsername || 'N/A'}`);
 
   const companyTypeMap: Record<string, string> = {
     service: 'Xizmat ko\'rsatish',
