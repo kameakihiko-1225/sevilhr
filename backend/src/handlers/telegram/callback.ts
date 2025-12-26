@@ -7,6 +7,31 @@ import { setRejectionState } from '../../utils/rejectionState';
 import { prisma } from '../../utils/prisma';
 import { t, getUserLocale } from '../../utils/translations';
 
+// Escape Markdown V2 special characters
+function escapeMarkdown(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/\\/g, '\\\\')
+    .replace(/_/g, '\\_')
+    .replace(/\*/g, '\\*')
+    .replace(/\[/g, '\\[')
+    .replace(/\]/g, '\\]')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)')
+    .replace(/~/g, '\\~')
+    .replace(/`/g, '\\`')
+    .replace(/>/g, '\\>')
+    .replace(/#/g, '\\#')
+    .replace(/\+/g, '\\+')
+    .replace(/-/g, '\\-')
+    .replace(/=/g, '\\=')
+    .replace(/\|/g, '\\|')
+    .replace(/\{/g, '\\{')
+    .replace(/\}/g, '\\}')
+    .replace(/\./g, '\\.')
+    .replace(/!/g, '\\!');
+}
+
 export async function handleCallback(ctx: Context, bot: Bot) {
   if (!ctx.callbackQuery || !ctx.callbackQuery.data || !ctx.from) {
     return;
@@ -70,40 +95,46 @@ export async function handleCallback(ctx: Context, bot: Bot) {
         };
 
         let message = `📋 *Lead - ACCEPTED*\n\n`;
-        message += `📍 Location: ${lead.location}\n`;
+        message += `📍 Location: ${escapeMarkdown(lead.location)}\n`;
         if (lead.companyType) {
-          message += `🏢 Company Type: ${companyTypeMap[lead.companyType as string] || lead.companyType}\n`;
+          const companyTypeText = companyTypeMap[lead.companyType as string] || lead.companyType;
+          message += `🏢 Company Type: ${escapeMarkdown(companyTypeText)}\n`;
         }
         if (lead.roleInCompany) {
-          message += `👔 Role: ${roleMap[lead.roleInCompany as string] || lead.roleInCompany}\n`;
+          const roleText = roleMap[lead.roleInCompany as string] || lead.roleInCompany;
+          message += `👔 Role: ${escapeMarkdown(roleText)}\n`;
         }
         if (lead.interests && lead.interests.length > 0) {
-          message += `🎯 Interests: ${lead.interests.map((i: string) => interestsMap[i] || i).join(', ')}\n`;
+          const interestsText = lead.interests.map((i: string) => interestsMap[i] || i).join(', ');
+          message += `🎯 Interests: ${escapeMarkdown(interestsText)}\n`;
         }
         if (lead.companyDescription) {
-          message += `📝 Description: ${lead.companyDescription}\n`;
+          message += `📝 Description: ${escapeMarkdown(lead.companyDescription)}\n`;
         }
         if (lead.annualTurnover) {
-          message += `💰 Annual Turnover: ${annualTurnoverMap[lead.annualTurnover as string] || lead.annualTurnover}\n`;
+          const turnoverText = annualTurnoverMap[lead.annualTurnover as string] || lead.annualTurnover;
+          message += `💰 Annual Turnover: ${escapeMarkdown(turnoverText)}\n`;
         }
         if (lead.numberOfEmployees) {
-          message += `👥 Employees: ${numberOfEmployeesMap[lead.numberOfEmployees as string] || lead.numberOfEmployees}\n`;
+          const employeesText = numberOfEmployeesMap[lead.numberOfEmployees as string] || lead.numberOfEmployees;
+          message += `👥 Employees: ${escapeMarkdown(employeesText)}\n`;
         }
-        message += `👤 Name: ${lead.fullName}\n`;
-        message += `📞 Phone: ${lead.phoneNumber}\n`;
+        message += `👤 Name: ${escapeMarkdown(lead.fullName)}\n`;
+        message += `📞 Phone: ${escapeMarkdown(lead.phoneNumber)}\n`;
         if (lead.companyName) {
-          message += `🏢 Company Name: ${lead.companyName}\n`;
+          message += `🏢 Company Name: ${escapeMarkdown(lead.companyName)}\n`;
         }
         if (lead.user.telegramId) {
-          message += `📱 Telegram: @${lead.user.telegramUsername || lead.user.telegramId}\n`;
+          const telegramDisplay = lead.user.telegramUsername || lead.user.telegramId;
+          message += `📱 Telegram: @${escapeMarkdown(telegramDisplay)}\n`;
         }
-        message += `✅ Accepted by: @${ctx.from.username || userId}`;
+        message += `✅ Accepted by: @${escapeMarkdown(ctx.from.username || userId)}`;
 
         await bot.api.editMessageText(
           lead.telegramChatId,
           parseInt(lead.telegramMessageId),
           message,
-          { parse_mode: 'Markdown' }
+          { parse_mode: 'MarkdownV2' }
         );
       }
 
@@ -139,19 +170,20 @@ export async function handleCallback(ctx: Context, bot: Bot) {
     }
     
     // Show predefined rejection reasons
+    // Use | as delimiter to avoid issues with UUID format
     const keyboard = {
       inline_keyboard: [
         [
-          { text: t(locale, 'callback.incompleteInfo'), callback_data: `reject_reason_${leadId}_incomplete` },
+          { text: t(locale, 'callback.incompleteInfo'), callback_data: `reject_reason_${leadId}|incomplete` },
         ],
         [
-          { text: t(locale, 'callback.notQualified'), callback_data: `reject_reason_${leadId}_not_qualified` },
+          { text: t(locale, 'callback.notQualified'), callback_data: `reject_reason_${leadId}|not_qualified` },
         ],
         [
-          { text: t(locale, 'callback.duplicate'), callback_data: `reject_reason_${leadId}_duplicate` },
+          { text: t(locale, 'callback.duplicate'), callback_data: `reject_reason_${leadId}|duplicate` },
         ],
         [
-          { text: t(locale, 'callback.other'), callback_data: `reject_reason_${leadId}_other` },
+          { text: t(locale, 'callback.other'), callback_data: `reject_reason_${leadId}|other` },
         ],
       ],
     };
@@ -161,11 +193,16 @@ export async function handleCallback(ctx: Context, bot: Bot) {
     });
   } else if (data.startsWith('reject_reason_')) {
     // Handle rejection reason selection
-    // Format: reject_reason_{leadId}_{reasonCode}
-    // Since leadId is a UUID (no underscores), we can safely split on the last underscore
-    const parts = data.replace('reject_reason_', '').split('_');
-    const reasonCode = parts[parts.length - 1]; // Last part is always the reason code
-    const leadId = parts.slice(0, -1).join('_'); // Everything before last underscore is leadId
+    // Format: reject_reason_{leadId}|{reasonCode}
+    // Use | as delimiter to avoid issues with UUID format
+    const parts = data.replace('reject_reason_', '').split('|');
+    if (parts.length !== 2) {
+      console.error(`[handleCallback] Invalid reject_reason format: ${data}`);
+      await ctx.reply('Error: Invalid rejection reason format.');
+      return;
+    }
+    const leadId = parts[0];
+    const reasonCode = parts[1];
     
     const reasonMap: Record<string, string> = {
       incomplete: 'Incomplete information',
@@ -188,8 +225,8 @@ export async function handleCallback(ctx: Context, bot: Bot) {
       const locale = await getUserLocale(lead.userId);
 
       if (reasonCode === 'other') {
-        // Store rejection state and ask for custom reason
-        setRejectionState(userId, leadId);
+        // Store rejection state (including rejectedBy) and ask for custom reason
+        setRejectionState(userId, leadId, userId);
         await ctx.reply(t(locale, 'callback.pleaseProvideReason'), {
           reply_markup: {
             force_reply: true,
@@ -199,8 +236,8 @@ export async function handleCallback(ctx: Context, bot: Bot) {
         // Use predefined reason (translated)
         const rejectionReason = t(locale, `callback.${reasonCode === 'incomplete' ? 'incompleteInfo' : reasonCode === 'not_qualified' ? 'notQualified' : reasonCode === 'duplicate' ? 'duplicate' : 'other'}`) || 'Not specified';
         
-        // Update lead status and get updated lead
-        const updatedLead = await updateLeadStatus(
+        // Update lead status
+        await updateLeadStatus(
           leadId,
           LeadStatus.REJECTED,
           undefined,
@@ -208,20 +245,31 @@ export async function handleCallback(ctx: Context, bot: Bot) {
           rejectionReason
         );
 
+        // Refetch the lead to get updated data
+        const refetchedLead = await prisma.lead.findUnique({
+          where: { id: leadId },
+          include: { user: true },
+        });
+
+        if (!refetchedLead) {
+          await ctx.reply(t(locale, 'callback.leadNotFound'));
+          return;
+        }
+
         // Update group message
-        if (updatedLead.telegramChatId && updatedLead.telegramMessageId) {
+        if (refetchedLead.telegramChatId && refetchedLead.telegramMessageId) {
           const rejectionMessage = formatRejectionMessageForGroup(
-            updatedLead,
+            refetchedLead,
             rejectionReason,
             ctx.from.username || userId
           );
 
           try {
             await bot.api.editMessageText(
-              updatedLead.telegramChatId,
-              parseInt(updatedLead.telegramMessageId),
+              refetchedLead.telegramChatId,
+              parseInt(refetchedLead.telegramMessageId),
               rejectionMessage,
-              { parse_mode: 'Markdown' }
+              { parse_mode: 'MarkdownV2' }
             );
           } catch (error) {
             console.error('Error updating group message with rejection:', error);
@@ -233,10 +281,10 @@ export async function handleCallback(ctx: Context, bot: Bot) {
 
         // Schedule channel reminder if user hasn't joined
         const userWithChannel = await prisma.user.findUnique({
-          where: { id: updatedLead.userId },
+          where: { id: refetchedLead.userId },
         });
         if (!(userWithChannel as any)?.channelJoined) {
-          await scheduleInitialReminder(updatedLead.userId);
+          await scheduleInitialReminder(refetchedLead.userId);
         }
 
         await ctx.reply(t(locale, 'callback.rejectedSuccess'));

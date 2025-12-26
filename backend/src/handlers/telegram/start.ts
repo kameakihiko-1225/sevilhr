@@ -5,6 +5,7 @@ import { scheduleInitialReminder } from '../../services/bot/channelReminderServi
 import { prisma } from '../../utils/prisma';
 import { t, getUserLocale } from '../../utils/translations';
 import { bot } from '../../services/botService';
+import { retrievePendingSubmission } from '../../utils/pendingSubmissions';
 
 const CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || '';
 
@@ -20,11 +21,101 @@ export async function handleStart(ctx: Context) {
       return;
     }
 
-    // Extract lead ID from start parameter if present
+    // Extract start parameter if present
     const startParam = ctx.message?.text?.split(' ')[1] || ctx.update.message?.text?.split(' ')[1];
     
-    // If start parameter contains a lead ID, update the lead's user with telegram data
     let leadUser = null;
+    
+    // Check if start parameter is a session ID (new flow)
+    if (startParam && startParam.startsWith('session_')) {
+      const sessionId = startParam;
+      console.log(`[handleStart] Detected session ID: ${sessionId}`);
+      
+      try {
+        // Retrieve pending form data
+        const formData = retrievePendingSubmission(sessionId);
+        
+        if (!formData) {
+          console.error(`[handleStart] Pending form data not found or expired for session ${sessionId}`);
+          const locale = await getUserLocale((await findOrCreateUser(ctx)).id);
+          await ctx.reply(t(locale, 'start.error') + '\n\nForm data not found or expired. Please submit the form again.');
+          return;
+        }
+        
+        console.log(`[handleStart] Retrieved form data for session ${sessionId}`);
+        
+        // Find or create user with Telegram info
+        leadUser = await findOrCreateUser(ctx);
+        
+        // Create lead with Telegram info already included
+        const { createLead } = await import('../../services/leadService');
+        const leadResult = await createLead({
+          ...formData,
+          userId: leadUser.id,
+        });
+        
+        console.log(`[handleStart] Created lead ${leadResult.lead.id} with Telegram info for user ${leadUser.id}`);
+        console.log(`[handleStart] Lead status: ${leadResult.lead.status}`);
+        
+        // Lead is already sent to group with Telegram info via createLead
+        // No need to update message as it's sent with Telegram info from the start
+        
+        const locale = await getUserLocale(leadUser.id);
+        await ctx.reply(t(locale, 'start.welcome'));
+        
+        // Continue with channel join flow
+        if (CHANNEL_ID) {
+          const channelUsername = CHANNEL_ID.replace('@', '');
+          await ctx.reply(t(locale, 'start.channelJoin'), {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  { text: t(locale, 'start.joinChannel'), url: `https://t.me/${channelUsername}` },
+                  { text: t(locale, 'start.iveJoined'), callback_data: `channel_joined_${leadUser.id}` },
+                ],
+              ],
+            },
+          });
+          
+          // Schedule initial channel reminder if user hasn't joined
+          const fullUser = await prisma.user.findUnique({
+            where: { id: leadUser.id },
+          });
+          if (!(fullUser as any)?.channelJoined) {
+            await scheduleInitialReminder(leadUser.id);
+          }
+        }
+        
+        // Show application status
+        const leads = await getUserLeads(leadUser.id);
+        if (leads.length > 0) {
+          const latestLead = leads[0];
+          let statusMessage = `${t(locale, 'start.applicationStatus')}: ${latestLead.status}`;
+
+          if (latestLead.status === LeadStatus.ACCEPTED) {
+            statusMessage += `\n${t(locale, 'start.accepted')}`;
+          } else if (latestLead.status === LeadStatus.REJECTED) {
+            statusMessage += `\n${t(locale, 'start.rejected')}`;
+            if (latestLead.rejectionReason) {
+              statusMessage += `\n${t(locale, 'start.reason')}: ${latestLead.rejectionReason}`;
+            }
+          } else {
+            statusMessage += `\n${t(locale, 'start.pending')}`;
+          }
+
+          await ctx.reply(statusMessage);
+        }
+        
+        return; // Exit early, don't process as regular lead ID
+      } catch (error) {
+        console.error(`[handleStart] Error processing session ${sessionId}:`, error);
+        const locale = await getUserLocale((await findOrCreateUser(ctx)).id);
+        await ctx.reply(t(locale, 'start.error') + '\n\nError processing form submission. Please try again.');
+        return;
+      }
+    }
+    
+    // Legacy flow: If start parameter contains a lead ID, update the lead's user with telegram data
     if (startParam) {
       try {
         const lead = await prisma.lead.findUnique({

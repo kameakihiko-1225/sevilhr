@@ -21,7 +21,7 @@ export async function handleMessage(ctx: Context, bot: Bot) {
 
     // Check if user is in rejection flow (waiting for custom reason)
     if (rejectionState) {
-      const { leadId } = rejectionState;
+      const { leadId, rejectedBy } = rejectionState;
       const rejectionReason = ctx.message.text.trim();
 
       if (!rejectionReason || rejectionReason.length === 0) {
@@ -29,8 +29,7 @@ export async function handleMessage(ctx: Context, bot: Bot) {
         return;
       }
 
-      // Get the user who is rejecting (from callback context, we need to store this)
-      // For now, we'll get it from the lead's current state
+      // Get the lead to check if it exists and get user locale
       const lead = await prisma.lead.findUnique({
         where: { id: leadId },
         include: { user: true },
@@ -45,27 +44,43 @@ export async function handleMessage(ctx: Context, bot: Bot) {
       // Get user's locale
       const locale = await getUserLocale(lead.userId);
 
-      // Update lead with rejection reason
-      await updateLeadStatus(
+      // Update lead with rejection reason (use stored rejectedBy)
+      const updatedLead = await updateLeadStatus(
         leadId,
         LeadStatus.REJECTED,
         undefined,
-        userId,
+        rejectedBy,
         rejectionReason
       );
 
+      // Refetch the lead to get updated data
+      const refetchedLead = await prisma.lead.findUnique({
+        where: { id: leadId },
+        include: { user: true },
+      });
+
+      if (!refetchedLead) {
+        await ctx.reply(t(locale, 'callback.leadNotFound'));
+        clearRejectionState(userId);
+        return;
+      }
+
       // Update group message with rejection details
-      if (lead.telegramChatId && lead.telegramMessageId) {
+      if (refetchedLead.telegramChatId && refetchedLead.telegramMessageId) {
         // Format rejection message for group
         const { formatRejectionMessageForGroup } = await import('../../services/bot/leadService');
-        const rejectionMessage = formatRejectionMessageForGroup(lead, rejectionReason, ctx.from.username || userId);
+        const rejectionMessage = formatRejectionMessageForGroup(
+          refetchedLead,
+          rejectionReason,
+          ctx.from.username || rejectedBy
+        );
         
         try {
           await bot.api.editMessageText(
-            lead.telegramChatId,
-            parseInt(lead.telegramMessageId),
+            refetchedLead.telegramChatId,
+            parseInt(refetchedLead.telegramMessageId),
             rejectionMessage,
-            { parse_mode: 'Markdown' }
+            { parse_mode: 'MarkdownV2' }
           );
         } catch (error) {
           console.error('Error updating group message with rejection:', error);

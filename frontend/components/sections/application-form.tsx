@@ -764,6 +764,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                   }
                   
                   setWantsTelegram(true);
+                  setIsSubmitting(true);
+                  
                   // Merge formValues and sessionData, prioritizing formValues
                   const currentData: FormData = {
                     location: (formValues.location || sessionData.location) as 'Toshkent shahri' | 'Boshqa viloyatda',
@@ -777,10 +779,45 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                     phoneNumber: formValues.phoneNumber || sessionData.phoneNumber || '',
                     companyName: formValues.companyName || sessionData.companyName,
                   };
-                    if (currentData.location && currentData.fullName && currentData.phoneNumber) {
-                      // Share Telegram button: submit as FULL and redirect to Telegram bot
+                  
+                  if (currentData.location && currentData.fullName && currentData.phoneNumber) {
+                    try {
+                      // Generate session ID
+                      const sessionId = `session_${crypto.randomUUID()}`;
+                      
+                      // Store form data temporarily
+                      const storeResponse = await fetch('/api/leads/pending', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          sessionId,
+                          formData: { ...currentData, status: 'FULL', locale },
+                        }),
+                      });
+                      
+                      if (!storeResponse.ok) {
+                        throw new Error('Failed to store form data');
+                      }
+                      
+                      // Get bot URL and redirect
+                      const botUrl = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/hr_sevil_lead_bot';
+                      const redirectUrl = `${botUrl}?start=${sessionId}`;
+                      
+                      console.log('[ApplicationForm] Storing form data and redirecting to bot:', redirectUrl);
+                      
+                      // Clear session before redirect
+                      clearSession();
+                      
+                      // Redirect to Telegram bot
+                      window.location.href = redirectUrl;
+                    } catch (error) {
+                      console.error('[ApplicationForm] Error storing form data:', error);
+                      setIsSubmitting(false);
+                      setWantsTelegram(null);
+                      // Fallback: submit normally
                       await submitForm(currentData, 'FULL', true);
                     }
+                  }
                 }}
                 className="w-full h-12 sm:h-14 text-base sm:text-lg rounded-lg bg-red-600 hover:bg-red-700 text-white min-h-[48px] disabled:opacity-50 disabled:cursor-not-allowed"
               >
