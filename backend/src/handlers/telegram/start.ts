@@ -74,30 +74,47 @@ export async function handleStart(ctx: Context) {
             });
           }
 
-          // Update the Telegram group message with Telegram contact info if message exists
-          if (lead.telegramChatId && lead.telegramMessageId && bot) {
-            try {
-              const { updateLeadMessageWithTelegram } = await import('../../services/bot/leadService');
-              console.log(`Updating lead message ${lead.telegramMessageId} with Telegram contact info for lead ${lead.id}`);
-              await updateLeadMessageWithTelegram(bot, lead.id);
-              console.log(`Successfully updated lead message with Telegram contact info for lead ${lead.id}`);
-            } catch (error) {
-              console.error(`Error updating lead message with Telegram info for lead ${lead.id}:`, error);
-              if (error instanceof Error) {
-                console.error('Error details:', error.message, error.stack);
-              }
-              // Don't fail the flow if message update fails
-            }
-          } else {
-            if (!lead.telegramChatId || !lead.telegramMessageId) {
-              console.warn(`Cannot update lead message: lead ${lead.id} missing telegramChatId or telegramMessageId`);
-            }
-            if (!bot) {
-              console.warn('Cannot update lead message: bot is not initialized');
-            }
-          }
+          // Refetch the lead with updated user to ensure we have the latest data
+          // This is important because the user was just updated with Telegram info
+          const updatedLead = await prisma.lead.findUnique({
+            where: { id: startParam },
+            include: { user: true },
+          });
 
-          console.log(`Lead ${startParam} updated with Telegram data for user ${lead.userId}`);
+          if (!updatedLead) {
+            console.warn(`Lead ${startParam} not found after refetch`);
+          } else {
+            // Log user update status
+            if (leadUser && leadUser.telegramId) {
+              console.log(`User ${leadUser.id} updated with Telegram ID: ${leadUser.telegramId}, Username: ${leadUser.telegramUsername || 'N/A'}`);
+            }
+
+            // Update the Telegram group message with Telegram contact info if message exists
+            if (updatedLead.telegramChatId && updatedLead.telegramMessageId && bot) {
+              try {
+                const { updateLeadMessageWithTelegram } = await import('../../services/bot/leadService');
+                console.log(`[handleStart] Attempting to update lead message ${updatedLead.telegramMessageId} with Telegram contact info for lead ${updatedLead.id}`);
+                console.log(`[handleStart] User Telegram ID: ${updatedLead.user.telegramId || 'NOT SET'}, Username: ${updatedLead.user.telegramUsername || 'N/A'}`);
+                await updateLeadMessageWithTelegram(bot, updatedLead.id);
+                console.log(`[handleStart] Successfully updated lead message with Telegram contact info for lead ${updatedLead.id}`);
+              } catch (error) {
+                console.error(`[handleStart] Error updating lead message with Telegram info for lead ${updatedLead.id}:`, error);
+                if (error instanceof Error) {
+                  console.error('[handleStart] Error details:', error.message, error.stack);
+                }
+                // Don't fail the flow if message update fails
+              }
+            } else {
+              if (!updatedLead.telegramChatId || !updatedLead.telegramMessageId) {
+                console.warn(`[handleStart] Cannot update lead message: lead ${updatedLead.id} missing telegramChatId (${updatedLead.telegramChatId || 'missing'}) or telegramMessageId (${updatedLead.telegramMessageId || 'missing'})`);
+              }
+              if (!bot) {
+                console.warn('[handleStart] Cannot update lead message: bot is not initialized');
+              }
+            }
+
+            console.log(`Lead ${startParam} updated with Telegram data for user ${updatedLead.userId}`);
+          }
         } else {
           console.warn(`Lead ${startParam} not found`);
         }

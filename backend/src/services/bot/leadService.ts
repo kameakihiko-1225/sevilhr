@@ -222,27 +222,38 @@ export async function updateLeadMessageWithTelegram(
   bot: Bot,
   leadId: string
 ) {
+  console.log(`[updateLeadMessageWithTelegram] Starting update for lead ${leadId}`);
+  
   const lead = await prisma.lead.findUnique({
     where: { id: leadId },
     include: { user: true },
   });
 
   if (!lead) {
-    console.warn('updateLeadMessageWithTelegram: Lead not found');
+    console.warn(`[updateLeadMessageWithTelegram] Lead ${leadId} not found in database`);
     return;
   }
 
+  console.log(`[updateLeadMessageWithTelegram] Lead found: ${lead.id}, Status: ${lead.status}`);
+  console.log(`[updateLeadMessageWithTelegram] User ID: ${lead.userId}, User Telegram ID: ${lead.user.telegramId || 'NOT SET'}, Username: ${lead.user.telegramUsername || 'NOT SET'}`);
+
+  // Validate required data
   if (!lead.telegramChatId || !lead.telegramMessageId) {
-    console.warn(`updateLeadMessageWithTelegram: Lead ${leadId} missing telegramChatId or telegramMessageId`);
+    console.warn(`[updateLeadMessageWithTelegram] Lead ${leadId} missing required message identifiers:`);
+    console.warn(`  - telegramChatId: ${lead.telegramChatId || 'MISSING'}`);
+    console.warn(`  - telegramMessageId: ${lead.telegramMessageId || 'MISSING'}`);
+    console.warn(`[updateLeadMessageWithTelegram] Cannot update message without these identifiers. Lead may not have been sent to group yet.`);
     return;
   }
 
   if (!lead.user.telegramId) {
-    console.warn(`updateLeadMessageWithTelegram: Lead ${leadId} user does not have telegramId yet`);
+    console.warn(`[updateLeadMessageWithTelegram] Lead ${leadId} user (${lead.userId}) does not have telegramId yet`);
+    console.warn(`[updateLeadMessageWithTelegram] User must start the bot first to link their Telegram account`);
     return;
   }
 
   const telegramContact = `\n📱 Telegram: @${lead.user.telegramUsername || lead.user.telegramId}`;
+  console.log(`[updateLeadMessageWithTelegram] Will add Telegram contact: ${telegramContact.trim()}`);
 
   const companyTypeMap: Record<string, string> = {
     service: 'Xizmat ko\'rsatish',
@@ -351,6 +362,10 @@ export async function updateLeadMessageWithTelegram(
     inline_keyboard: inlineKeyboard,
   };
 
+  console.log(`[updateLeadMessageWithTelegram] Preparing to update message in chat ${lead.telegramChatId}, message ID ${lead.telegramMessageId}`);
+  console.log(`[updateLeadMessageWithTelegram] Message length: ${message.length} characters`);
+  console.log(`[updateLeadMessageWithTelegram] Keyboard buttons: ${inlineKeyboard.length} rows`);
+
   try {
     await bot.api.editMessageText(
       lead.telegramChatId,
@@ -361,15 +376,35 @@ export async function updateLeadMessageWithTelegram(
         reply_markup: keyboard,
       }
     );
-    console.log(`Successfully updated lead message ${lead.telegramMessageId} with Telegram contact info for lead ${leadId}`);
+    console.log(`[updateLeadMessageWithTelegram] ✅ Successfully updated lead message ${lead.telegramMessageId} with Telegram contact info for lead ${leadId}`);
+    console.log(`[updateLeadMessageWithTelegram] Message now includes Telegram contact: @${lead.user.telegramUsername || lead.user.telegramId}`);
   } catch (error) {
-    console.error(`Error updating lead message with Telegram info for lead ${leadId}:`, error);
+    console.error(`[updateLeadMessageWithTelegram] ❌ Error updating lead message with Telegram info for lead ${leadId}`);
+    
     if (error instanceof Error) {
-      console.error('Error details:', error.message);
-      if (error.stack) {
-        console.error('Stack trace:', error.stack);
+      console.error(`[updateLeadMessageWithTelegram] Error type: ${error.constructor.name}`);
+      console.error(`[updateLeadMessageWithTelegram] Error message: ${error.message}`);
+      
+      // Provide specific error messages for common Telegram API errors
+      if (error.message.includes('message to edit not found')) {
+        console.error(`[updateLeadMessageWithTelegram] The message may have been deleted or the message ID is incorrect`);
+      } else if (error.message.includes('chat not found')) {
+        console.error(`[updateLeadMessageWithTelegram] The chat/group may not exist or the bot is not a member`);
+      } else if (error.message.includes('message is not modified')) {
+        console.warn(`[updateLeadMessageWithTelegram] Message content is the same - this is not a critical error`);
+      } else if (error.message.includes('parse_mode')) {
+        console.error(`[updateLeadMessageWithTelegram] Markdown parsing error - check message format`);
+      } else {
+        console.error(`[updateLeadMessageWithTelegram] Unknown Telegram API error`);
       }
+      
+      if (error.stack) {
+        console.error(`[updateLeadMessageWithTelegram] Stack trace:`, error.stack);
+      }
+    } else {
+      console.error(`[updateLeadMessageWithTelegram] Unknown error type:`, error);
     }
+    // Error is logged but not re-thrown to avoid breaking the flow
   }
 }
 
