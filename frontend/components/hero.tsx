@@ -200,7 +200,7 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
             <div
               key={index}
               className={cn(
-                "relative flex-shrink-0 w-32 sm:w-40 md:w-44 lg:w-48 h-32 sm:h-40 md:h-44 lg:h-48 flex items-center justify-center transition-all duration-300",
+                "relative flex-shrink-0 w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 lg:w-48 lg:h-48 flex items-center justify-center transition-all duration-300",
                 "opacity-60 grayscale hover:opacity-100 hover:grayscale-0"
               )}
             >
