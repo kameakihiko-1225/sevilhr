@@ -83,7 +83,7 @@
     "phoneNumber": {
       "label": "Your phone number",
       "placeholder": "+998901234567",
-      "hint": "Please share your Telegram account for quick contact",
+      "hint": "Link your Telegram account for faster contact",
       "submitButton": "Link Telegram"
     },
     "companyName": {

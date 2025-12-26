@@ -746,8 +746,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
             </div>
 
             {/* Telegram Instruction Text */}
-            <div className="bg-gray-50 rounded-lg border-2 border-gray-200 p-4 sm:p-5">
-              <p className="text-sm sm:text-base text-gray-700 leading-relaxed">{t.form.phoneNumber.hint}</p>
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg border-2 border-red-300 p-4 sm:p-6 shadow-sm">
+              <p className="text-base sm:text-lg md:text-xl text-gray-900 font-medium leading-relaxed">{t.form.phoneNumber.hint}</p>
             </div>
 
             {/* Telegram Button */}

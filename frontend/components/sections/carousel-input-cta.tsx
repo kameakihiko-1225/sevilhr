@@ -115,10 +115,10 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
           {/* Carousel text overlay */}
           {showCarousel && (
             <div className="absolute inset-0 flex items-center px-4 sm:px-6 pointer-events-none">
-              <span className="text-base sm:text-lg text-gray-400 transition-opacity duration-200">
+              <span className="text-lg sm:text-xl md:text-2xl text-gray-900 font-medium transition-opacity duration-200">
                 {displayedText}
                 {/* Cursor blink effect */}
-                <span className="inline-block w-0.5 h-4 sm:h-5 bg-gray-400 ml-1 animate-pulse" />
+                <span className="inline-block w-0.5 h-5 sm:h-6 md:h-7 bg-gray-900 ml-1 animate-pulse" />
               </span>
             </div>
           )}

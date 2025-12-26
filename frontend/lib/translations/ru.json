@@ -83,7 +83,7 @@
     "phoneNumber": {
       "label": "Ваш номер телефона",
       "placeholder": "+998901234567",
-      "hint": "Пожалуйста, поделитесь своим аккаунтом Telegram для быстрой связи",
+      "hint": "Привяжите Telegram для более быстрой связи",
       "submitButton": "Связать Telegram"
     },
     "companyName": {

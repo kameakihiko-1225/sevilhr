@@ -83,7 +83,7 @@
     "phoneNumber": {
       "label": "Telefon raqamingiz",
       "placeholder": "+998901234567",
-      "hint": "Telegram akkauntingizni ulashishingizni so'raymiz tez aloqa uchun",
+      "hint": "Tezroq bog'lanishimiz uchun Telegram akkauntingizni ulashing",
       "submitButton": "Telegramni ulashish"
     },
     "companyName": {
