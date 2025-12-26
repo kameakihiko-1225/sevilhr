@@ -13,11 +13,10 @@ export const metadata: Metadata = {
   description: "Submit your application to join HRSEVIL",
   icons: {
     icon: [
-      { url: '/Group 10.png', type: 'image/png' },
-      { url: '/icon.png', type: 'image/png' },
+      { url: '/frontend/app/icon.png', type: 'image/png' },
     ],
-    shortcut: '/Group 10.png',
-    apple: '/Group 10.png',
+    shortcut: '/frontend/app/icon.png',
+    apple: '/frontend/app/icon.png',
   },
 };
 
