@@ -6,6 +6,7 @@ import { prisma } from '../../utils/prisma';
 import { t, getUserLocale } from '../../utils/translations';
 import { bot } from '../../services/botService';
 import { retrievePendingSubmission } from '../../utils/pendingSubmissions';
+import { normalizePhoneNumber } from '../../utils/phoneNormalizer';
 
 const CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || '';
 
@@ -44,18 +45,47 @@ export async function handleStart(ctx: Context) {
         
         console.log(`[handleStart] Retrieved form data for session ${sessionId}`);
         
-        // Find or create user with Telegram info
-        leadUser = await findOrCreateUser(ctx);
+        // Extract Telegram info from context
+        const telegramId = ctx.from?.id?.toString();
+        const telegramUsername = ctx.from?.username || null;
+        const firstName = ctx.from?.first_name || null;
+        const lastName = ctx.from?.last_name || null;
         
-        // Create lead with Telegram info already included
+        console.log(`[handleStart] Telegram info: id=${telegramId}, username=${telegramUsername || 'none'}`);
+        
+        // Create lead with Telegram info - createLead will handle user creation/merging
         const { createLead } = await import('../../services/leadService');
         const leadResult = await createLead({
           ...formData,
-          userId: leadUser.id,
+          telegramId: telegramId,
+          telegramUsername: telegramUsername,
+          firstName: firstName,
+          lastName: lastName,
         });
         
-        console.log(`[handleStart] Created lead ${leadResult.lead.id} with Telegram info for user ${leadUser.id}`);
-        console.log(`[handleStart] Lead status: ${leadResult.lead.status}`);
+        console.log(`[handleStart] ✅ Created lead ${leadResult.id} with status ${leadResult.status}`);
+        
+        // Get the user that was created/updated by createLead
+        // Query by both phone and Telegram ID to find the correct user
+        const normalizedPhone = normalizePhoneNumber(formData.phoneNumber);
+        
+        const finalUser = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { phoneNumber: normalizedPhone },
+              ...(telegramId ? [{ telegramId: telegramId }] : []),
+            ],
+          },
+        });
+        
+        if (!finalUser) {
+          console.error(`[handleStart] Failed to find user after lead creation. Phone: ${normalizedPhone}, TelegramId: ${telegramId || 'none'}`);
+          throw new Error('Failed to find user after lead creation');
+        }
+        
+        leadUser = finalUser;
+        
+        console.log(`[handleStart] ✅ Final user: ${leadUser.id}, phone: ${leadUser.phoneNumber}, telegramId: ${leadUser.telegramId || 'none'}`);
         
         // Lead is already sent to group with Telegram info via createLead
         // No need to update message as it's sent with Telegram info from the start
@@ -130,10 +160,35 @@ export async function handleStart(ctx: Context) {
           });
 
           if (existingTelegramUser && existingTelegramUser.id !== lead.userId) {
-            // If there's a different user with this Telegram ID, we can't update
-            // because telegramId is unique. Log the situation.
-            console.warn(`Telegram ID ${telegramId} already linked to user ${existingTelegramUser.id}, but lead ${startParam} belongs to user ${lead.userId}. Skipping Telegram update.`);
-            leadUser = lead.user; // Use the lead's user as-is
+            // Different user with this Telegram ID - merge accounts
+            console.log(`[handleStart] Telegram ID ${telegramId} already linked to user ${existingTelegramUser.id}, but lead ${startParam} belongs to user ${lead.userId}. Merging accounts.`);
+            
+            try {
+              const { mergeUserAccounts } = await import('../../services/userMergeService');
+              
+              // Determine which user to keep (prefer the one with the lead)
+              const targetUserId = lead.userId;
+              const sourceUserId = existingTelegramUser.id;
+              
+              console.log(`[handleStart] Merging: keeping user ${targetUserId} (has lead), removing user ${sourceUserId}`);
+              
+              const mergedUser = await mergeUserAccounts(sourceUserId, targetUserId);
+              
+              // Get the merged user
+              leadUser = await prisma.user.findUnique({
+                where: { id: mergedUser.id },
+              });
+              
+              if (!leadUser) {
+                throw new Error(`Failed to find merged user ${mergedUser.id}`);
+              }
+              
+              console.log(`[handleStart] ✅ Successfully merged accounts. Final user: ${leadUser.id}, telegramId: ${leadUser.telegramId || 'none'}`);
+            } catch (mergeError) {
+              console.error(`[handleStart] ❌ Error merging accounts:`, mergeError);
+              // Fallback: use lead's user
+              leadUser = lead.user;
+            }
           } else {
             // Safe to update: either no existing user with this Telegram ID, or it's the same user
             try {
@@ -146,11 +201,32 @@ export async function handleStart(ctx: Context) {
                   lastName: lastName,
                 },
               });
+              console.log(`[handleStart] ✅ Updated user ${leadUser.id} with Telegram ID ${telegramId}`);
             } catch (error: any) {
               // Handle unique constraint violation gracefully
               if (error?.code === 'P2002') {
-                console.warn(`Failed to update user ${lead.userId} with Telegram ID ${telegramId}: unique constraint violation`);
-                leadUser = lead.user; // Use the lead's user as-is
+                console.warn(`[handleStart] Failed to update user ${lead.userId} with Telegram ID ${telegramId}: unique constraint violation`);
+                // Try to find the user that has this Telegram ID and merge
+                const conflictingUser = await prisma.user.findUnique({
+                  where: { telegramId: telegramId },
+                });
+                
+                if (conflictingUser && conflictingUser.id !== lead.userId) {
+                  console.log(`[handleStart] Attempting to merge conflicting users: ${conflictingUser.id} and ${lead.userId}`);
+                  try {
+                    const { mergeUserAccounts } = await import('../../services/userMergeService');
+                    const mergedUser = await mergeUserAccounts(conflictingUser.id, lead.userId);
+                    leadUser = await prisma.user.findUnique({
+                      where: { id: mergedUser.id },
+                    });
+                    console.log(`[handleStart] ✅ Merged conflicting users successfully`);
+                  } catch (mergeError) {
+                    console.error(`[handleStart] ❌ Error merging conflicting users:`, mergeError);
+                    leadUser = lead.user; // Use the lead's user as-is
+                  }
+                } else {
+                  leadUser = lead.user; // Use the lead's user as-is
+                }
               } else {
                 throw error; // Re-throw other errors
               }

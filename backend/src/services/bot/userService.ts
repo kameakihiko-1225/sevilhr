@@ -28,6 +28,7 @@ export async function findOrCreateUser(
   }
 
   // Create new user (phone number will be linked later when they submit form)
+  // Note: If a user with the same phone number exists, createLead will merge the accounts
   const newUser = await prisma.user.create({
     data: {
       telegramId,
@@ -36,6 +37,8 @@ export async function findOrCreateUser(
       channelJoined: false,
     },
   });
+
+  console.log(`[findOrCreateUser] Created new user ${newUser.id} with Telegram ID ${telegramId} and temp phone number`);
 
   return { id: newUser.id, telegramId: newUser.telegramId, channelJoined: newUser.channelJoined };
 }
