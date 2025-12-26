@@ -301,6 +301,16 @@ async function mergeUserAccountsInTransaction(
   // Channel joined: true if either is true
   updateData.channelJoined = targetUser.channelJoined || sourceUser.channelJoined;
 
+  // If we're moving telegramId from source to target, clear it from source first
+  // to avoid unique constraint violation
+  if (updateData.telegramId && updateData.telegramId === sourceUser.telegramId) {
+    await tx.user.update({
+      where: { id: sourceUserId },
+      data: { telegramId: null, telegramUsername: null },
+    });
+    console.log(`[mergeUserAccountsInTransaction] Cleared telegramId from source user ${sourceUserId}`);
+  }
+
   // Update target user with merged data
   await tx.user.update({
     where: { id: targetUserId },
