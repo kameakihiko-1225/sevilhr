@@ -54,8 +54,8 @@ export async function handleStart(ctx: Context) {
           userId: leadUser.id,
         });
         
-        console.log(`[handleStart] Created lead ${leadResult.lead.id} with Telegram info for user ${leadUser.id}`);
-        console.log(`[handleStart] Lead status: ${leadResult.lead.status}`);
+        console.log(`[handleStart] Created lead ${leadResult.id} with Telegram info for user ${leadUser.id}`);
+        console.log(`[handleStart] Lead status: ${leadResult.status}`);
         
         // Lead is already sent to group with Telegram info via createLead
         // No need to update message as it's sent with Telegram info from the start
