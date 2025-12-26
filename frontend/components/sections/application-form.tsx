@@ -727,8 +727,12 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
           <div className="space-y-4">
             {/* Phone Number Input */}
             <div>
+              <Label htmlFor="phoneNumber" className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 mb-2 block">
+                {t.form.phoneNumber.label}
+              </Label>
               <Input
                 {...register('phoneNumber')}
+                id="phoneNumber"
                 type="tel"
                 placeholder={t.form.phoneNumber.placeholder}
                 value={formValues.phoneNumber || sessionData.phoneNumber || ''}
@@ -746,8 +750,12 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
 
             {/* Telegram Username Input (Optional) */}
             <div>
+              <Label htmlFor="telegramUsername" className="text-base sm:text-lg md:text-xl font-semibold text-gray-900 mb-2 block">
+                {t.form.telegramUsername.label}
+              </Label>
               <Input
                 {...register('telegramUsername')}
+                id="telegramUsername"
                 type="text"
                 placeholder={t.form.telegramUsername.placeholder}
                 value={formValues.telegramUsername || sessionData.telegramUsername || ''}
