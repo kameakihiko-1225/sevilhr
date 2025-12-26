@@ -3,7 +3,6 @@ import { LeadStatus } from '@prisma/client';
 import { updateLeadStatus, formatRejectionMessageForGroup } from '../../services/bot/leadService';
 import { notifyUserAboutDecision } from '../../services/bot/notificationService';
 import { scheduleInitialReminder } from '../../services/bot/channelReminderService';
-import { setRejectionState, getRejectionState, clearRejectionState } from '../../utils/rejectionState';
 import { prisma } from '../../utils/prisma';
 import { t, getUserLocale } from '../../utils/translations';
 
@@ -182,68 +181,6 @@ export async function handleCallback(ctx: Context, bot: Bot) {
   } else if (data.startsWith('reject_')) {
     const leadId = data.replace('reject_', '');
     
-    // Get user's locale from lead
-    let locale: 'uz' | 'en' | 'ru' = 'uz';
-    try {
-      const lead = await prisma.lead.findUnique({
-        where: { id: leadId },
-        include: { user: true },
-      });
-      if (lead) {
-        locale = await getUserLocale(lead.userId);
-      }
-    } catch {
-      // Use default
-    }
-    
-    // Show predefined rejection reasons
-    // Use | as delimiter to avoid issues with UUID format
-    const keyboard = {
-      inline_keyboard: [
-        [
-          { text: t(locale, 'callback.incompleteInfo'), callback_data: `reject_reason_${leadId}|incomplete` },
-        ],
-        [
-          { text: t(locale, 'callback.notQualified'), callback_data: `reject_reason_${leadId}|not_qualified` },
-        ],
-        [
-          { text: t(locale, 'callback.duplicate'), callback_data: `reject_reason_${leadId}|duplicate` },
-        ],
-        [
-          { text: t(locale, 'callback.other'), callback_data: `reject_reason_${leadId}|other` },
-        ],
-      ],
-    };
-
-    // Send rejection menu and store message ID for later deletion
-    const menuMessage = await sendMessage(t(locale, 'callback.rejectReason'), {
-      reply_markup: keyboard,
-    });
-    
-    // Store menu message ID in rejection state for later deletion
-    if (menuMessage && 'message_id' in menuMessage && 'chat' in menuMessage) {
-      const menuChatId = menuMessage.chat.id;
-      setRejectionState(userId, leadId, userId, menuMessage.message_id, menuChatId);
-    }
-  } else if (data.startsWith('reject_reason_')) {
-    // Handle rejection reason selection
-    // Format: reject_reason_{leadId}|{reasonCode}
-    // Use | as delimiter to avoid issues with UUID format
-    const parts = data.replace('reject_reason_', '').split('|');
-      if (parts.length !== 2) {
-        console.error(`[handleCallback] Invalid reject_reason format: ${data}`);
-        await sendMessage('Error: Invalid rejection reason format.');
-        return;
-      }
-    const leadId = parts[0];
-    const reasonCode = parts[1];
-    
-    const reasonMap: Record<string, string> = {
-      incomplete: 'Incomplete information',
-      not_qualified: 'Not qualified',
-      duplicate: 'Duplicate application',
-    };
-
     try {
       const lead = await prisma.lead.findUnique({
         where: { id: leadId },
@@ -258,104 +195,69 @@ export async function handleCallback(ctx: Context, bot: Bot) {
       // Get user's locale
       const locale = await getUserLocale(lead.userId);
 
-      // Get existing rejection state to preserve menu message info
-      const existingState = getRejectionState(userId);
-      const menuMessageId = existingState?.menuMessageId;
-      const menuChatId = existingState?.menuChatId;
+      // Update lead status to REJECTED immediately
+      await updateLeadStatus(
+        leadId,
+        LeadStatus.REJECTED,
+        undefined,
+        userId,
+        'Rejected' // Default rejection reason
+      );
 
-      if (reasonCode === 'other') {
-        // Store rejection state (including rejectedBy and menu message info) and ask for custom reason
-        setRejectionState(userId, leadId, userId, menuMessageId, menuChatId);
-        await sendMessage(t(locale, 'callback.pleaseProvideReason'), {
-          reply_markup: {
-            force_reply: true,
-          },
-        });
-      } else {
-        // Delete the rejection menu message if it exists
-        if (menuMessageId && menuChatId) {
-          try {
-            await bot.api.deleteMessage(menuChatId, menuMessageId);
-          } catch (error) {
-            console.error('Error deleting rejection menu message:', error);
-            // Continue even if deletion fails
-          }
-        }
-        // Use predefined reason (translated)
-        const rejectionReason = t(locale, `callback.${reasonCode === 'incomplete' ? 'incompleteInfo' : reasonCode === 'not_qualified' ? 'notQualified' : reasonCode === 'duplicate' ? 'duplicate' : 'other'}`) || 'Not specified';
-        
-        // Update lead status
-        await updateLeadStatus(
-          leadId,
-          LeadStatus.REJECTED,
-          undefined,
-          userId,
-          rejectionReason
+      // Refetch the lead to get updated data
+      const refetchedLead = await prisma.lead.findUnique({
+        where: { id: leadId },
+        include: { user: true },
+      });
+
+      if (!refetchedLead) {
+        await sendMessage(t(locale, 'callback.leadNotFound'));
+        return;
+      }
+
+      // Update group message
+      if (refetchedLead.telegramChatId && refetchedLead.telegramMessageId) {
+        const rejectionMessage = formatRejectionMessageForGroup(
+          refetchedLead,
+          'Rejected', // Default rejection reason
+          ctx.from.username || userId
         );
 
-        // Refetch the lead to get updated data
-        const refetchedLead = await prisma.lead.findUnique({
-          where: { id: leadId },
-          include: { user: true },
-        });
-
-        if (!refetchedLead) {
-          await sendMessage(t(locale, 'callback.leadNotFound'));
-          return;
-        }
-
-        // Update group message
-        if (refetchedLead.telegramChatId && refetchedLead.telegramMessageId) {
-          const rejectionMessage = formatRejectionMessageForGroup(
-            refetchedLead,
-            rejectionReason,
-            ctx.from.username || userId
+        try {
+          await bot.api.editMessageText(
+            refetchedLead.telegramChatId,
+            parseInt(refetchedLead.telegramMessageId),
+            rejectionMessage,
+            { parse_mode: 'MarkdownV2' }
           );
-
-          try {
-            await bot.api.editMessageText(
-              refetchedLead.telegramChatId,
-              parseInt(refetchedLead.telegramMessageId),
-              rejectionMessage,
-              { parse_mode: 'MarkdownV2' }
-            );
-          } catch (error) {
-            console.error('Error updating group message with rejection:', error);
-          }
+        } catch (error) {
+          console.error('Error updating group message with rejection:', error);
         }
-
-        // Notify user
-        await notifyUserAboutDecision(bot, leadId, LeadStatus.REJECTED);
-
-        // Schedule channel reminder if user hasn't joined
-        const userWithChannel = await prisma.user.findUnique({
-          where: { id: refetchedLead.userId },
-        });
-        if (!(userWithChannel as any)?.channelJoined) {
-          await scheduleInitialReminder(refetchedLead.userId);
-        }
-
-        await sendMessage(t(locale, 'callback.rejectedSuccess'));
-        
-        // Clear rejection state after successful rejection
-        clearRejectionState(userId);
       }
+
+      // Notify user
+      await notifyUserAboutDecision(bot, leadId, LeadStatus.REJECTED);
+
+      // Schedule channel reminder if user hasn't joined
+      const userWithChannel = await prisma.user.findUnique({
+        where: { id: refetchedLead.userId },
+      });
+      if (!(userWithChannel as any)?.channelJoined) {
+        await scheduleInitialReminder(refetchedLead.userId);
+      }
+
+      await sendMessage(t(locale, 'callback.rejectedSuccess'));
     } catch (error) {
       console.error('Error processing rejection:', error);
       // Try to get locale
       let locale: 'uz' | 'en' | 'ru' = 'uz';
       try {
-        // Parse using the new format with | delimiter
-        const parts = data.replace('reject_reason_', '').split('|');
-        if (parts.length === 2) {
-          const leadId = parts[0];
-          const lead = await prisma.lead.findUnique({
-            where: { id: leadId },
-            include: { user: true },
-          });
-          if (lead) {
-            locale = await getUserLocale(lead.userId);
-          }
+        const lead = await prisma.lead.findUnique({
+          where: { id: leadId },
+          include: { user: true },
+        });
+        if (lead) {
+          locale = await getUserLocale(lead.userId);
         }
       } catch {
         // Use default

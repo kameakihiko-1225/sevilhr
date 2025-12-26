@@ -952,7 +952,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
           <CardHeader className="pb-6">
             <div className="text-center mb-3 sm:mb-4 max-[319px]:block min-[320px]:hidden min-[426px]:block">
               <div className="inline-block px-4 sm:px-5 py-2 sm:py-2.5 bg-red-600 text-white rounded-full text-sm sm:text-base font-semibold mb-2 sm:mb-3">
-                {t.form.step} {currentStage} {t.form.of} {TOTAL_STAGES}
+                {t.form.step} {currentStage}/{TOTAL_STAGES}
               </div>
             </div>
 

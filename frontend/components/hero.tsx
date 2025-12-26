@@ -200,7 +200,7 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
             <div
               key={index}
               className={cn(
-                "relative flex-shrink-0 w-40 sm:w-48 md:w-56 lg:w-64 h-20 sm:h-24 md:h-28 lg:h-32 flex items-center justify-center transition-all duration-300",
+                "relative flex-shrink-0 w-32 sm:w-40 md:w-44 lg:w-48 h-32 sm:h-40 md:h-44 lg:h-48 flex items-center justify-center transition-all duration-300",
                 "opacity-60 grayscale hover:opacity-100 hover:grayscale-0"
               )}
             >
@@ -208,8 +208,8 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
                 src={logo.src}
                 alt={logo.alt}
                 fill
-                className="object-contain pointer-events-none p-3 sm:p-4"
-                sizes="(max-width: 640px) 160px, (max-width: 768px) 192px, (max-width: 1024px) 224px, 256px"
+                className="object-contain pointer-events-none p-4 sm:p-5 md:p-6"
+                sizes="(max-width: 640px) 128px, (max-width: 768px) 160px, (max-width: 1024px) 176px, 192px"
               />
             </div>
           ))}
@@ -254,10 +254,10 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
   // Partner logos data - all available company logos
   const partnerLogos = [
     { src: '/companies/cert main.png', alt: 'Cert Main', fallback: 'CM' },
-    { src: '/companies/gold real.jpg', alt: 'Gold Real', fallback: 'GR' },
+    { src: '/companies/gold_real-removebg-preview.png', alt: 'Gold Real', fallback: 'GR' },
     { src: '/companies/muu.png', alt: 'MUU', fallback: 'MU' },
     { src: '/companies/redbullcom-logo_double-with-text.svg', alt: 'Red Bull', fallback: 'RB' },
-    { src: '/companies/egs main.jpg', alt: 'EGS', fallback: 'EGS' },
+    { src: '/companies/egs_main-removebg-preview.png', alt: 'EGS', fallback: 'EGS' },
     { src: '/companies/yosh olim.svg', alt: 'Yosh Olim', fallback: 'YO' },
     { src: '/companies/Logo white school.png', alt: 'MuSchool', fallback: 'MS' },
     { src: '/companies/tez go.jpg', alt: 'Tez Go', fallback: 'TG' },
