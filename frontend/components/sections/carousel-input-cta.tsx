@@ -87,17 +87,17 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
   };
 
   return (
-    <div className="mb-4 sm:mb-6 md:mb-8 flex flex-col sm:flex-row items-stretch sm:items-center max-w-2xl mx-auto px-2 sm:px-0">
-      <div className="flex border-2 border-red-300 rounded-lg overflow-hidden flex-1 shadow-sm">
+    <div className="mb-4 sm:mb-6 md:mb-8 flex flex-col sm:flex-row items-stretch sm:items-center max-w-3xl mx-auto px-2 sm:px-0">
+      <div className="flex border-2 border-red-300 rounded-lg overflow-hidden flex-1 shadow-sm min-w-0">
         {/* Input field with carousel overlay */}
-        <div className="relative flex-1">
+        <div className="relative flex-1 min-w-0">
           <input
             type="text"
             disabled
             readOnly
             className={cn(
               "w-full h-11 sm:h-12 md:h-14 px-3 sm:px-4 md:px-6",
-              "text-sm sm:text-base md:text-lg",
+              "text-xs sm:text-sm md:text-base lg:text-lg",
               "bg-white text-gray-900 outline-none",
               "placeholder:text-transparent", // Hide default placeholder
               "cursor-default",
@@ -106,11 +106,11 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
             )}
           />
           {/* Carousel text overlay - styled like real input text */}
-          <div className="absolute inset-0 flex items-center px-3 sm:px-4 md:px-6 pointer-events-none">
-            <span className="text-sm sm:text-base md:text-lg text-gray-900 font-normal leading-normal transition-opacity duration-200">
+          <div className="absolute inset-0 flex items-center px-3 sm:px-4 md:px-6 pointer-events-none overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <span className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-900 font-normal leading-normal transition-opacity duration-200 whitespace-nowrap">
               {displayedText}
               {/* Cursor blink effect - more realistic */}
-              <span className="inline-block w-[2px] h-4 sm:h-5 md:h-6 bg-red-600 ml-0.5 sm:ml-1 animate-pulse" style={{ animationDuration: '1s' }} />
+              <span className="inline-block w-[2px] h-3 sm:h-4 md:h-5 lg:h-6 bg-red-600 ml-0.5 sm:ml-1 animate-pulse" style={{ animationDuration: '1s' }} />
             </span>
           </div>
         </div>
@@ -120,11 +120,11 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
           onClick={handleScrollToForm}
           className={cn(
             "bg-red-600 hover:bg-red-700 active:bg-red-800 text-white",
-            "px-4 sm:px-6 md:px-8 lg:px-12",
+            "px-3 sm:px-5 md:px-7 lg:px-10",
             "py-2.5 sm:py-3 md:py-4",
             "h-11 sm:h-12 md:h-14",
-            "text-sm sm:text-base md:text-lg font-semibold",
-            "flex items-center justify-center gap-1.5 sm:gap-2",
+            "text-xs sm:text-sm md:text-base lg:text-lg font-semibold",
+            "flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2",
             "transition-colors duration-200",
             "whitespace-nowrap",
             "cursor-pointer",
