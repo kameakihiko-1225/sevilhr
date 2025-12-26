@@ -259,7 +259,7 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
     { src: '/companies/redbullcom-logo_double-with-text.svg', alt: 'Red Bull', fallback: 'RB' },
     { src: '/companies/egs main.jpg', alt: 'EGS', fallback: 'EGS' },
     { src: '/companies/yosh olim.svg', alt: 'Yosh Olim', fallback: 'YO' },
-    { src: '/companies/muschool-logo.png', alt: 'MuSchool', fallback: 'MS' },
+    { src: '/companies/Logo white school.png', alt: 'MuSchool', fallback: 'MS' },
     { src: '/companies/tez go.jpg', alt: 'Tez Go', fallback: 'TG' },
   ];
 
