@@ -11,6 +11,11 @@ const robotoFlex = Roboto_Flex({
 export const metadata: Metadata = {
   title: "HRSEVIL ATS - Application Form",
   description: "Submit your application to join HRSEVIL",
+  icons: {
+    icon: '/Group 10.png',
+    shortcut: '/Group 10.png',
+    apple: '/Group 10.png',
+  },
 };
 
 export default function RootLayout({
