@@ -15,11 +15,11 @@ alwaysOn = false
 
 # On boot - commands to run when repl starts
 onBoot = "npm install && cd backend && npm install && cd ../frontend && npm install"
-modules = ["nodejs-20"]
+modules = ["web", "nix", "nodejs-20"]
 
 # Package manager
 [nix]
-channel = "stable-22_11"
+channel = "stable-25_05"
 
 [languages.nodejs]
 pattern = "**/*.{js,ts,json}"
