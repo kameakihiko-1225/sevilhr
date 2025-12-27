@@ -109,8 +109,8 @@ export function CarouselInputCTA({ locale = 'uz' }: CarouselInputCTAProps) {
           <div className="absolute inset-0 flex items-center px-3 sm:px-4 md:px-6 pointer-events-none overflow-x-auto overflow-y-hidden scrollbar-hide">
             <span className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-900 font-normal leading-normal transition-opacity duration-200 whitespace-nowrap">
               {displayedText}
-              {/* Cursor blink effect - more realistic */}
-              <span className="inline-block w-[2px] h-3 sm:h-4 md:h-5 lg:h-6 bg-red-600 ml-0.5 sm:ml-1 animate-pulse" style={{ animationDuration: '1s' }} />
+              {/* Cursor blink effect - using | character */}
+              <span className="inline-block text-red-600 ml-0.5 sm:ml-1 animate-pulse font-bold" style={{ animationDuration: '1s' }}>|</span>
             </span>
           </div>
         </div>

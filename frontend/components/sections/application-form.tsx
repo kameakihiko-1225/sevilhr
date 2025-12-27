@@ -107,10 +107,9 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
       case 7:
         return !!numberOfEmployees && typeof numberOfEmployees === 'string' && numberOfEmployees.trim().length > 0;
       case 8:
-        return !!(fullName && typeof fullName === 'string' && fullName.trim().length > 0) && 
-               !!(phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim().length > 0);
+        return !!(fullName && typeof fullName === 'string' && fullName.trim().length > 0);
       case 9:
-        return true; // Stage 9 is always valid (telegramUsername is optional)
+        return !!(phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim().length > 0);
       default:
         return false;
     }
