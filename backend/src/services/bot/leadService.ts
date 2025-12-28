@@ -68,17 +68,25 @@ export async function sendLeadToGroup(
   console.log(`[sendLeadToGroup] Lead status is ${lead.status}, proceeding to send full data to group`);
 
   // Create clickable Telegram contact link for initial message
-  const telegramContact = lead.user.telegramId 
-    ? (() => {
-        const telegramUserId = lead.user.telegramId;
-        // Don't escape @ symbol, but escape other special characters in username
-        const displayName = lead.user.telegramUsername 
-          ? `@${lead.user.telegramUsername.replace(/[_\*\[\]\(\)~`>#\+\-=\|\{\}\.\\!]/g, '\\$&')}` 
-          : `User ${escapeMarkdown(telegramUserId)}`;
-        // Use tg://user?id= format for clickable user links in Telegram Markdown
-        return `\n📱 Telegram: [${displayName}](tg://user?id=${telegramUserId})`;
-      })()
-    : '';
+  const telegramContact = (() => {
+    if (lead.user.telegramId) {
+      // Use contact link (opens message interface) when telegramId is available
+      const telegramUserId = lead.user.telegramId;
+      // Normalize username: remove @ if present, then add @ for display
+      const normalizedUsername = lead.user.telegramUsername?.replace(/^@/, '') || '';
+      const displayName = normalizedUsername
+        ? `@${normalizedUsername.replace(/[_\*\[\]\(\)~`>#\+\-=\|\{\}\.\\!]/g, '\\$&')}` 
+        : `User ${escapeMarkdown(telegramUserId)}`;
+      // Use tg://user?id= format for clickable user links in Telegram Markdown
+      return `\n📱 Telegram: [${displayName}](tg://user?id=${telegramUserId})`;
+    } else if (lead.user.telegramUsername) {
+      // Use profile link (opens profile page) when only username is available
+      const username = lead.user.telegramUsername.replace(/^@/, ''); // Remove @ if present for URL
+      const displayName = `@${username.replace(/[_\*\[\]\(\)~`>#\+\-=\|\{\}\.\\!]/g, '\\$&')}`;
+      return `\n📱 Telegram: [${displayName}](https://t.me/${username})`;
+    }
+    return '';
+  })();
 
   const companyTypeMap: Record<string, string> = {
     service: 'Xizmat ko\'rsatish',
@@ -164,11 +172,14 @@ export async function sendLeadToGroup(
   ];
 
   // Add Telegram contact button if user has telegram
-  if (lead.user.telegramId) {
+  if (lead.user.telegramId || lead.user.telegramUsername) {
+    const usernameOrId = lead.user.telegramId 
+      ? (lead.user.telegramUsername?.replace(/^@/, '') || lead.user.telegramId)
+      : lead.user.telegramUsername.replace(/^@/, '');
     inlineKeyboard.push([
       { 
         text: `💬 Contact on Telegram`, 
-        url: `https://t.me/${lead.user.telegramUsername || lead.user.telegramId}` 
+        url: `https://t.me/${usernameOrId}` 
       },
     ]);
   }
@@ -349,28 +360,27 @@ export async function updateLeadMessageWithTelegram(
     return;
   }
 
-  if (!lead.user.telegramId) {
-    console.warn(`[updateLeadMessageWithTelegram] Lead ${leadId} user (${lead.userId}) does not have telegramId yet`);
-    console.warn(`[updateLeadMessageWithTelegram] User must start the bot first to link their Telegram account`);
-    return;
-  }
-
   // Create clickable Telegram contact link
-  // Use tg://user?id=USER_ID format for clickable user links in Telegram
-  const telegramUsernameOrId = lead.user.telegramUsername || lead.user.telegramId;
-  const telegramUserId = lead.user.telegramId;
-  
-  // Create clickable link: [@username](tg://user?id=USER_ID)
-  // This allows sales managers to click and directly message the user
+  // Use tg://user?id=USER_ID format when telegramId is available, or https://t.me/username when only username exists
   let telegramContact = '';
-  if (telegramUserId) {
-    // For display name, use @username if available, otherwise show User ID
-    // Don't escape @ symbol, but escape other special characters in username
-    const displayName = lead.user.telegramUsername 
-      ? `@${lead.user.telegramUsername.replace(/[_\*\[\]\(\)~`>#\+\-=\|\{\}\.\\!]/g, '\\$&')}` 
+  if (lead.user.telegramId) {
+    // Use contact link (opens message interface) when telegramId is available
+    const telegramUserId = lead.user.telegramId;
+    // Normalize username: remove @ if present, then add @ for display
+    const normalizedUsername = lead.user.telegramUsername?.replace(/^@/, '') || '';
+    const displayName = normalizedUsername
+      ? `@${normalizedUsername.replace(/[_\*\[\]\(\)~`>#\+\-=\|\{\}\.\\!]/g, '\\$&')}` 
       : `User ${escapeMarkdown(telegramUserId)}`;
     // Use tg://user?id= format for clickable user links in Telegram Markdown
     telegramContact = `\n📱 Telegram: [${displayName}](tg://user?id=${telegramUserId})`;
+  } else if (lead.user.telegramUsername) {
+    // Use profile link (opens profile page) when only username is available
+    const username = lead.user.telegramUsername.replace(/^@/, ''); // Remove @ if present for URL
+    const displayName = `@${username.replace(/[_\*\[\]\(\)~`>#\+\-=\|\{\}\.\\!]/g, '\\$&')}`;
+    telegramContact = `\n📱 Telegram: [${displayName}](https://t.me/${username})`;
+  } else {
+    console.warn(`[updateLeadMessageWithTelegram] Lead ${leadId} user (${lead.userId}) does not have telegramId or telegramUsername`);
+    // Don't return early - still update the message without Telegram contact info
   }
   
   console.log(`[updateLeadMessageWithTelegram] Will add Telegram contact: ${telegramContact.trim()}`);
@@ -479,11 +489,14 @@ export async function updateLeadMessageWithTelegram(
 
   // Always add Telegram contact button when Telegram info is available
   // This enables sales managers to directly chat with the user
-  if (lead.user.telegramId) {
+  if (lead.user.telegramId || lead.user.telegramUsername) {
+    const usernameOrId = lead.user.telegramId 
+      ? (lead.user.telegramUsername?.replace(/^@/, '') || lead.user.telegramId)
+      : lead.user.telegramUsername.replace(/^@/, '');
     inlineKeyboard.push([
       { 
         text: `💬 Contact on Telegram`, 
-        url: `https://t.me/${lead.user.telegramUsername || lead.user.telegramId}` 
+        url: `https://t.me/${usernameOrId}` 
       },
     ]);
   }

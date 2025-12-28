@@ -759,11 +759,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                 placeholder={t.form.telegramUsername.placeholder}
                 value={formValues.telegramUsername || sessionData.telegramUsername || ''}
                 onChange={(e) => {
-                  let value = e.target.value.trim();
-                  // Remove @ if user types it
-                  if (value.startsWith('@')) {
-                    value = value.substring(1);
-                  }
+                  const value = e.target.value.trim();
                   setValue('telegramUsername', value);
                   updateField('telegramUsername', value);
                 }}
@@ -808,39 +804,11 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                       // Determine status: FULL if telegramUsername provided, otherwise FULL_WITHOUT_TELEGRAM
                       const status = currentData.telegramUsername ? 'FULL' : 'FULL_WITHOUT_TELEGRAM';
                       
-                      if (status === 'FULL' && currentData.telegramUsername) {
-                        // Generate session ID
-                        const sessionId = `session_${crypto.randomUUID()}`;
-                        
-                        // Store form data temporarily
-                        const storeResponse = await fetch('/api/leads/pending', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            sessionId,
-                            formData: { ...currentData, status, locale },
-                          }),
-                        });
-                        
-                        if (!storeResponse.ok) {
-                          throw new Error('Failed to store form data');
-                        }
-                        
-                        // Get bot URL and redirect
-                        const botUrl = process.env.NEXT_PUBLIC_TELEGRAM_BOT_URL || 'https://t.me/hr_sevil_lead_bot';
-                        const redirectUrl = `${botUrl}?start=${sessionId}`;
-                        
-                        console.log('[ApplicationForm] Storing form data and redirecting to bot:', redirectUrl);
-                        
-                        // Clear session before redirect
-                        clearSession();
-                        
-                        // Redirect to Telegram bot
-                        window.location.href = redirectUrl;
-                      } else {
-                        // Submit without Telegram redirect
-                        await submitForm(currentData, status, false);
-                      }
+                      // Always submit form immediately (no session storage or bot redirect)
+                      await submitForm(currentData, status, false);
+                      
+                      // Redirect to Telegram channel after successful submission
+                      window.location.href = 'https://t.me/street_mba';
                     } catch (error) {
                       console.error('[ApplicationForm] Error submitting form:', error);
                       setIsSubmitting(false);
