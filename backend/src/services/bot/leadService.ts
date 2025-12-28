@@ -175,7 +175,7 @@ export async function sendLeadToGroup(
   if (lead.user.telegramId || lead.user.telegramUsername) {
     const usernameOrId = lead.user.telegramId 
       ? (lead.user.telegramUsername?.replace(/^@/, '') || lead.user.telegramId)
-      : lead.user.telegramUsername.replace(/^@/, '');
+      : (lead.user.telegramUsername?.replace(/^@/, '') || '');
     inlineKeyboard.push([
       { 
         text: `💬 Contact on Telegram`, 
@@ -384,7 +384,7 @@ export async function updateLeadMessageWithTelegram(
   }
   
   console.log(`[updateLeadMessageWithTelegram] Will add Telegram contact: ${telegramContact.trim()}`);
-  console.log(`[updateLeadMessageWithTelegram] Telegram User ID: ${telegramUserId}, Username: ${lead.user.telegramUsername || 'N/A'}`);
+  console.log(`[updateLeadMessageWithTelegram] Telegram User ID: ${lead.user.telegramId || 'N/A'}, Username: ${lead.user.telegramUsername || 'N/A'}`);
 
   const companyTypeMap: Record<string, string> = {
     service: 'Xizmat ko\'rsatish',
@@ -492,7 +492,7 @@ export async function updateLeadMessageWithTelegram(
   if (lead.user.telegramId || lead.user.telegramUsername) {
     const usernameOrId = lead.user.telegramId 
       ? (lead.user.telegramUsername?.replace(/^@/, '') || lead.user.telegramId)
-      : lead.user.telegramUsername.replace(/^@/, '');
+      : (lead.user.telegramUsername?.replace(/^@/, '') || '');
     inlineKeyboard.push([
       { 
         text: `💬 Contact on Telegram`, 
