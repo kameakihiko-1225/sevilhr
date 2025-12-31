@@ -15,7 +15,6 @@ async function ensurePrismaGenerated() {
     const prismaGen = spawn('npx', ['prisma', 'generate'], {
       cwd: path.join(__dirname, '../backend'),
       stdio: 'inherit',
-      shell: true,
     });
 
     prismaGen.on('close', (code) => {
@@ -41,7 +40,6 @@ async function syncDatabaseSchema() {
     const dbPush = spawn('npx', ['prisma', 'db', 'push', '--accept-data-loss'], {
       cwd: path.join(__dirname, '../backend'),
       stdio: 'inherit',
-      shell: true,
     });
 
     dbPush.on('close', (code) => {
@@ -67,7 +65,6 @@ function startBackend() {
   return spawn('npm', ['run', backendScript], {
     cwd: backendPath,
     stdio: 'inherit',
-    shell: true,
     env: {
       ...process.env,
       NODE_ENV: isProduction ? 'production' : 'development',
@@ -84,7 +81,6 @@ function startFrontend() {
   return spawn('npm', ['run', frontendScript], {
     cwd: frontendPath,
     stdio: 'inherit',
-    shell: true,
     env: {
       ...process.env,
       NODE_ENV: isProduction ? 'production' : 'development',
