@@ -9,7 +9,7 @@ const robotoFlex = Roboto_Flex({
 });
 
 export const metadata: Metadata = {
-  title: "HRSEVIL ATS - Application Form",
+  title: "HRSEVIL - Your growth partner",
   description: "Submit your application to join HRSEVIL",
   icons: {
     icon: [

@@ -67,7 +67,7 @@ const Footer = ({ locale = 'uz' }: FooterProps) => {
           <span className="text-muted-foreground text-xs sm:text-sm text-center">
             &copy; {new Date().getFullYear()}{" "}
             <Link href="/" className="hover:text-foreground transition-colors">
-              HRSEVIL
+            HRSEVIL - Your growth partner
             </Link>
             . All rights reserved.
           </span>
