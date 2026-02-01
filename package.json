@@ -16,7 +16,10 @@
     "prisma:generate": "cd backend && npm run prisma:generate",
     "prisma:migrate": "cd backend && npm run prisma:migrate",
     "prisma:push": "cd backend && npx prisma db push",
-    "prisma:studio": "cd backend && npm run prisma:studio"
+    "prisma:studio": "cd backend && npm run prisma:studio",
+    "deploy": "vercel --prod",
+    "deploy:preview": "vercel",
+    "deploy:netlify": "netlify deploy --prod"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -5,8 +5,10 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "npx tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
+    "postinstall": "prisma generate",
     "start": "node dist/index.js",
+    "vercel-build": "prisma generate && prisma migrate deploy && tsc",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
@@ -25,6 +27,7 @@
     "node-cron": "^4.2.1",
     "prisma": "~5.7.1",
     "typescript": "^5.3.3",
+    "serverless-http": "^3.2.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
