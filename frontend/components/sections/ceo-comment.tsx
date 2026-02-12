@@ -25,31 +25,26 @@ const ceoComments: Record<number, Record<Locale, string>> = {
     ru: "Это необходимо для понимания процесса принятия решений.",
   },
   4: {
-    uz: "Fokusni aniqlash uchun kerak.",
-    en: "This is needed to identify the focus.",
-    ru: "Это необходимо для определения фокуса.",
-  },
-  5: {
     uz: "Biznesingizni sizning tilingizda tushunish olishimiz uchun kerak.",
     en: "This is needed to understand your business in your own words.",
     ru: "Это необходимо для понимания вашего бизнеса на вашем языке.",
   },
-  6: {
+  5: {
     uz: "Buni sizga qaysi darajadagi yechim mos kelishini aniqlash uchun so'rayapmiz.",
     en: "We're asking to determine which level of solution suits you.",
     ru: "Мы спрашиваем, чтобы определить, какой уровень решения вам подходит.",
   },
-  7: {
+  6: {
     uz: "Bu bizga tashkiliy murakkablik darajasini baholash uchun kerak.",
     en: "This is needed to assess the level of organizational complexity.",
     ru: "Это необходимо для оценки уровня организационной сложности.",
   },
-  8: {
+  7: {
     uz: "Odam ekaningizni bilaylik. Robotlar ko'payib ketgan 🙂",
     en: "Let us know you're human. Robots are multiplying 🙂",
     ru: "Дайте нам знать, что вы человек. Роботы размножаются 🙂",
   },
-  9: {
+  8: {
     uz: "Yechim bera olishimizni bilsak aloqaga chiqamiz.",
     en: "If we know we can provide a solution, we'll reach out.",
     ru: "Если мы знаем, что можем предоставить решение, мы свяжемся.",

@@ -7,8 +7,7 @@
     "headline": "Yaxshi korxonalarga kattalashishda yordam beramiz.",
     "rotating": [
       "To'g'ri xodim yollash orqali",
-      "Sotuv bo'limini tizimlashtirish orqali",
-      "Mijozlar oqimini ko'paytirish orqali"
+      "Kuchli jamoa qurish orqali"
     ],
     "whatsNew": "O'sish • Biz bilan boshlanadi!",
     "cta": "Boshlash",
@@ -21,12 +20,11 @@
       "1": "Korxonangiz qayerda joylashgan?",
       "2": "Korxonangiz turi qanday?",
       "3": "Korxonada o'rningiz qanaqa?",
-      "4": "Sizni nima ko'proq qiziqtiradi?",
-      "5": "Korxonangizni tasvirlang",
-      "6": "Yillik aylanma",
-      "7": "Xodimlar soni",
-      "8": "Ismingiz",
-      "9": "Telefon raqamingiz va Telegram username"
+      "4": "Korxonangizni tasvirlang",
+      "5": "Yillik aylanma",
+      "6": "Xodimlar soni",
+      "7": "Ismingiz",
+      "8": "Telefon raqamingiz va Telegram username"
     },
     "location": {
       "label": "Korxonangiz qayerda joylashgan?",

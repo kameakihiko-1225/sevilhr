@@ -36,7 +36,7 @@ interface ApplicationFormProps {
   onSubmitSuccess?: (data: FormData) => void;
 }
 
-const TOTAL_STAGES = 9;
+const TOTAL_STAGES = 8;
 
 export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationFormProps) {
   const [currentStage, setCurrentStage] = useState(1);
@@ -78,6 +78,14 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
   const formValues = watch();
   const currentInterests = (formValues.interests || sessionData.interests || []) as string[];
 
+  // Auto-set interests to hiring since it's the only service
+  useEffect(() => {
+    if (mounted) {
+      setValue('interests', ['hiring']);
+      updateField('interests', ['hiring']);
+    }
+  }, [mounted]);
+
   // Helper function to check if a stage has data
   const isStageFilled = (stage: number): boolean => {
     // Prioritize formValues (current live state) over sessionData
@@ -99,16 +107,14 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
       case 3:
         return !!roleInCompany && typeof roleInCompany === 'string' && roleInCompany.trim().length > 0;
       case 4:
-        return Array.isArray(interests) && interests.length > 0 && interests.some(i => i && i.trim().length > 0);
-      case 5:
         return !!companyDescription && typeof companyDescription === 'string' && companyDescription.trim().length > 0;
-      case 6:
+      case 5:
         return !!annualTurnover && typeof annualTurnover === 'string' && annualTurnover.trim().length > 0;
-      case 7:
+      case 6:
         return !!numberOfEmployees && typeof numberOfEmployees === 'string' && numberOfEmployees.trim().length > 0;
-      case 8:
+      case 7:
         return !!(fullName && typeof fullName === 'string' && fullName.trim().length > 0);
-      case 9:
+      case 8:
         return !!(phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim().length > 0);
       default:
         return false;
@@ -549,44 +555,6 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
           <div className="space-y-4">
             {/* Options */}
             <div>
-              <div className="space-y-2">
-                {[
-                  { key: 'hiring', label: t.form.interests.hiring },
-                  { key: 'customerFlow', label: t.form.interests.customerFlow },
-                  { key: 'salesSystem', label: t.form.interests.salesSystem },
-                ].map((interest) => (
-                  <button
-                    key={interest.key}
-                    type="button"
-                    onClick={() => toggleInterest(interest.key)}
-                    className={cn(
-                      "relative w-full p-5 sm:p-6 rounded-lg border-2 text-left transition-all min-h-[56px] sm:min-h-[60px]",
-                      currentInterests.includes(interest.key)
-                        ? "border-red-600 bg-red-50"
-                        : "border-gray-300 bg-white hover:border-red-400"
-                    )}
-                  >
-                    {currentInterests.includes(interest.key) && (
-                      <Check className="absolute top-3 right-3 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
-                    )}
-                    <span className="text-base sm:text-lg font-medium">{interest.label}</span>
-                  </button>
-                ))}
-              </div>
-              {currentInterests.length === 0 && (
-                <p className="text-sm text-red-600 mt-3 font-medium">{t.validation?.interestsMin || 'Select at least one'}</p>
-              )}
-            </div>
-            {/* CEO Comment */}
-            <CEOComment stage={4} locale={locale} />
-          </div>
-        );
-
-      case 5:
-        return (
-          <div className="space-y-4">
-            {/* Options */}
-            <div>
               <Textarea
                 {...register('companyDescription')}
                 placeholder={t.form.companyDescription.placeholder}
@@ -599,11 +567,11 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               />
             </div>
             {/* CEO Comment */}
-            <CEOComment stage={5} locale={locale} />
+            <CEOComment stage={4} locale={locale} />
           </div>
         );
 
-      case 6:
+      case 5:
         return (
           <div className="space-y-4">
             {/* Options */}
@@ -646,11 +614,11 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               </div>
             </div>
             {/* CEO Comment */}
-            <CEOComment stage={6} locale={locale} />
+            <CEOComment stage={5} locale={locale} />
           </div>
         );
 
-      case 7:
+      case 6:
         return (
           <div className="space-y-4">
             {/* Options */}
@@ -692,11 +660,11 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               </div>
             </div>
             {/* CEO Comment */}
-            <CEOComment stage={7} locale={locale} />
+            <CEOComment stage={6} locale={locale} />
           </div>
         );
 
-      case 8:
+      case 7:
         return (
           <div className="space-y-4">
             {/* Options */}
@@ -717,11 +685,11 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               )}
             </div>
             {/* CEO Comment */}
-            <CEOComment stage={8} locale={locale} />
+            <CEOComment stage={7} locale={locale} />
           </div>
         );
 
-      case 9:
+      case 8:
         return (
           <div className="space-y-4">
             {/* Phone Number Input */}
@@ -768,7 +736,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
             </div>
 
             {/* CEO Comment */}
-            <CEOComment stage={9} locale={locale} />
+            <CEOComment stage={8} locale={locale} />
             
             {/* Finish Button */}
               <div className="mt-6 sm:mt-8">
@@ -943,13 +911,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                     <Button 
                       type="button" 
                       onClick={() => {
-                        // Validate interests on stage 4
-                        if (currentStage === 4 && currentInterests.length === 0) {
-                          return;
-                        }
                         nextStage();
                       }}
-                      disabled={currentStage === 4 && currentInterests.length === 0}
                       className="h-11 px-6 text-base rounded-full bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
                     >
                       {t.form.next}
