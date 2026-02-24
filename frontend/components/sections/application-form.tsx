@@ -22,6 +22,7 @@ type FormData = {
   companyType: string;
   roleInCompany: string;
   interests: string[];
+  positionToDelegate: string;
   companyDescription: string;
   annualTurnover: string;
   numberOfEmployees: string;
@@ -36,7 +37,7 @@ interface ApplicationFormProps {
   onSubmitSuccess?: (data: FormData) => void;
 }
 
-const TOTAL_STAGES = 8;
+const TOTAL_STAGES = 9;
 
 export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationFormProps) {
   const [currentStage, setCurrentStage] = useState(1);
@@ -51,6 +52,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     companyType: z.string().min(1, t.validation?.required || 'Company type is required'),
     roleInCompany: z.string().min(1, t.validation?.required || 'Role in company is required'),
     interests: z.array(z.string()).min(1, t.validation?.interestsMin || 'Select at least one interest'),
+    positionToDelegate: z.string().min(1, t.validation?.required || 'Position is required'),
     companyDescription: z.string().min(1, t.validation?.required || 'Company description is required'),
     annualTurnover: z.string().min(1, t.validation?.required || 'Annual turnover is required'),
     numberOfEmployees: z.string().min(1, t.validation?.required || 'Number of employees is required'),
@@ -72,6 +74,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     defaultValues: mounted ? {
       ...(sessionData as Partial<FormData>),
       interests: (sessionData.interests as string[]) || [],
+      fullName: (sessionData.fullName as string) || '',
+      phoneNumber: (sessionData.phoneNumber as string) || '',
     } : undefined,
   });
 
@@ -99,6 +103,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     const fullName = formValues.fullName || sessionData.fullName;
     const phoneNumber = formValues.phoneNumber || sessionData.phoneNumber;
     
+    const positionToDelegate = formValues.positionToDelegate || sessionData.positionToDelegate;
+
     switch (stage) {
       case 1:
         return !!location && (location === 'Toshkent shahri' || location === 'Boshqa viloyatda');
@@ -107,14 +113,16 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
       case 3:
         return !!roleInCompany && typeof roleInCompany === 'string' && roleInCompany.trim().length > 0;
       case 4:
-        return !!companyDescription && typeof companyDescription === 'string' && companyDescription.trim().length > 0;
+        return !!positionToDelegate && typeof positionToDelegate === 'string' && positionToDelegate.trim().length > 0;
       case 5:
-        return !!annualTurnover && typeof annualTurnover === 'string' && annualTurnover.trim().length > 0;
+        return !!companyDescription && typeof companyDescription === 'string' && companyDescription.trim().length > 0;
       case 6:
-        return !!numberOfEmployees && typeof numberOfEmployees === 'string' && numberOfEmployees.trim().length > 0;
+        return !!annualTurnover && typeof annualTurnover === 'string' && annualTurnover.trim().length > 0;
       case 7:
-        return !!(fullName && typeof fullName === 'string' && fullName.trim().length > 0);
+        return !!numberOfEmployees && typeof numberOfEmployees === 'string' && numberOfEmployees.trim().length > 0;
       case 8:
+        return !!(fullName && typeof fullName === 'string' && fullName.trim().length > 0);
+      case 9:
         return !!(phoneNumber && typeof phoneNumber === 'string' && phoneNumber.trim().length > 0);
       default:
         return false;
@@ -144,6 +152,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     const companyType = formValues.companyType || sessionData.companyType;
     const roleInCompany = formValues.roleInCompany || sessionData.roleInCompany;
     const interests = formValues.interests || sessionData.interests;
+    const positionToDelegate = formValues.positionToDelegate || sessionData.positionToDelegate;
     const companyDescription = formValues.companyDescription || sessionData.companyDescription;
     const annualTurnover = formValues.annualTurnover || sessionData.annualTurnover;
     const numberOfEmployees = formValues.numberOfEmployees || sessionData.numberOfEmployees;
@@ -155,6 +164,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
       companyType &&
       roleInCompany &&
       Array.isArray(interests) && interests.length > 0 &&
+      positionToDelegate &&
       companyDescription &&
       annualTurnover &&
       numberOfEmployees &&
@@ -201,6 +211,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
           companyType: formValues.companyType || sessionData.companyType || '',
           roleInCompany: formValues.roleInCompany || sessionData.roleInCompany || '',
           interests: (formValues.interests || sessionData.interests || []) as string[],
+          positionToDelegate: formValues.positionToDelegate || sessionData.positionToDelegate || '',
           companyDescription: formValues.companyDescription || sessionData.companyDescription || '',
           annualTurnover: formValues.annualTurnover || sessionData.annualTurnover || '',
           numberOfEmployees: formValues.numberOfEmployees || sessionData.numberOfEmployees || '',
@@ -208,7 +219,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
           phoneNumber: formValues.phoneNumber || sessionData.phoneNumber || '',
           companyName: formValues.companyName || sessionData.companyName,
         };
-        
+
         submitForm(allData as FormData, 'DID_NOT_CLICK_SUBMIT_BUTTON', false);
         clearInterval(inactivityTimer);
       }
@@ -233,6 +244,7 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
           companyType: formValues.companyType || sessionData.companyType || '',
           roleInCompany: formValues.roleInCompany || sessionData.roleInCompany || '',
           interests: (formValues.interests || sessionData.interests || []) as string[],
+          positionToDelegate: formValues.positionToDelegate || sessionData.positionToDelegate || '',
           companyDescription: formValues.companyDescription || sessionData.companyDescription || '',
           annualTurnover: formValues.annualTurnover || sessionData.annualTurnover || '',
           numberOfEmployees: formValues.numberOfEmployees || sessionData.numberOfEmployees || '',
@@ -372,8 +384,19 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
     setCurrentStage(stage);
   };
 
-  const nextStage = () => {
+  const stageFields: Record<number, keyof FormData | undefined> = {
+    5: 'positionToDelegate',
+    6: 'companyDescription',
+    8: 'fullName',
+  };
+
+  const nextStage = async () => {
     if (currentStage < TOTAL_STAGES) {
+      const fieldToValidate = stageFields[currentStage];
+      if (fieldToValidate) {
+        const isValid = await trigger(fieldToValidate);
+        if (!isValid) return;
+      }
       setCurrentStage(currentStage + 1);
     }
   };
@@ -553,7 +576,30 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
       case 4:
         return (
           <div className="space-y-4">
-            {/* Options */}
+            <div>
+              <Input
+                {...register('positionToDelegate')}
+                placeholder={t.form.positionToDelegate.placeholder}
+                value={formValues.positionToDelegate || sessionData.positionToDelegate || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setValue('positionToDelegate', value);
+                  updateField('positionToDelegate', value);
+                }}
+                className="h-14 sm:h-16 text-lg sm:text-xl md:text-2xl px-4 sm:px-6 border-2 focus:border-red-600"
+              />
+              {errors.positionToDelegate && (
+                <p className="text-sm text-red-600 mt-3 font-medium">{errors.positionToDelegate.message}</p>
+              )}
+            </div>
+            {/* CEO Comment */}
+            <CEOComment stage={4} locale={locale} />
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-4">
             <div>
               <Textarea
                 {...register('companyDescription')}
@@ -567,14 +613,13 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               />
             </div>
             {/* CEO Comment */}
-            <CEOComment stage={4} locale={locale} />
+            <CEOComment stage={5} locale={locale} />
           </div>
         );
 
-      case 5:
+      case 6:
         return (
           <div className="space-y-4">
-            {/* Options */}
             <div>
               <div className="grid grid-cols-2 gap-2">
                 {[
@@ -591,7 +636,6 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                     onClick={() => {
                       setValue('annualTurnover', range.key);
                       updateField('annualTurnover', range.key);
-                      // Auto-advance to next stage after selection
                       setTimeout(() => {
                         if (currentStage < TOTAL_STAGES) {
                           nextStage();
@@ -614,14 +658,13 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               </div>
             </div>
             {/* CEO Comment */}
-            <CEOComment stage={5} locale={locale} />
+            <CEOComment stage={6} locale={locale} />
           </div>
         );
 
-      case 6:
+      case 7:
         return (
           <div className="space-y-4">
-            {/* Options */}
             <div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {[
@@ -637,7 +680,6 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                     onClick={() => {
                       setValue('numberOfEmployees', range.key);
                       updateField('numberOfEmployees', range.key);
-                      // Auto-advance to next stage after selection
                       setTimeout(() => {
                         if (currentStage < TOTAL_STAGES) {
                           nextStage();
@@ -660,14 +702,13 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               </div>
             </div>
             {/* CEO Comment */}
-            <CEOComment stage={6} locale={locale} />
+            <CEOComment stage={7} locale={locale} />
           </div>
         );
 
-      case 7:
+      case 8:
         return (
           <div className="space-y-4">
-            {/* Options */}
             <div>
               <Input
                 {...register('fullName')}
@@ -685,11 +726,11 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
               )}
             </div>
             {/* CEO Comment */}
-            <CEOComment stage={7} locale={locale} />
+            <CEOComment stage={8} locale={locale} />
           </div>
         );
 
-      case 8:
+      case 9:
         return (
           <div className="space-y-4">
             {/* Phone Number Input */}
@@ -736,8 +777,8 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
             </div>
 
             {/* CEO Comment */}
-            <CEOComment stage={8} locale={locale} />
-            
+            <CEOComment stage={9} locale={locale} />
+
             {/* Finish Button */}
               <div className="mt-6 sm:mt-8">
                 <Button
@@ -757,13 +798,14 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
                       companyType: formValues.companyType || sessionData.companyType || '',
                       roleInCompany: formValues.roleInCompany || sessionData.roleInCompany || '',
                       interests: (formValues.interests || sessionData.interests || []) as string[],
+                      positionToDelegate: formValues.positionToDelegate || sessionData.positionToDelegate || '',
                       companyDescription: formValues.companyDescription || sessionData.companyDescription || '',
                       annualTurnover: formValues.annualTurnover || sessionData.annualTurnover || '',
                       numberOfEmployees: formValues.numberOfEmployees || sessionData.numberOfEmployees || '',
                       fullName: formValues.fullName || sessionData.fullName || '',
                       phoneNumber: formValues.phoneNumber || sessionData.phoneNumber || '',
                       companyName: formValues.companyName || sessionData.companyName,
-                    telegramUsername: formValues.telegramUsername || sessionData.telegramUsername,
+                      telegramUsername: formValues.telegramUsername || sessionData.telegramUsername,
                     };
                   
                     if (currentData.location && currentData.fullName && currentData.phoneNumber) {

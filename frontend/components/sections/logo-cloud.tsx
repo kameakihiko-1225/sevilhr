@@ -10,11 +10,16 @@ interface LogoCloudProps {
 
 const companyLogos = [
   { src: '/companies/cert main.png', alt: 'Cert Main' },
-  { src: '/companies/gold real.jpg', alt: 'Gold Real' },
-  { src: '/companies/muschool.png', alt: 'MuSchool' },
+  { src: '/companies/gold_real-removebg-preview.png', alt: 'Gold Real' },
   { src: '/companies/muu.png', alt: 'MUU' },
   { src: '/companies/redbullcom-logo_double-with-text.svg', alt: 'Red Bull' },
-  { src: '/companies/egs main.jpg', alt: 'EGS' },
+  { src: '/companies/egs_main-removebg-preview.png', alt: 'EGS' },
+  { src: '/companies/yosh olim.svg', alt: 'Yosh Olim' },
+  { src: '/companies/Logo white school.png', alt: 'MuSchool' },
+  { src: '/companies/Tez Go.png', alt: 'Tez Go' },
+  { src: '/companies/picanother.png', alt: 'Luqmam' },
+  { src: '/companies/registon.svg', alt: 'Registon' },
+  { src: '/companies/Yoshlar_ishlari_agentligi_logotipi.svg.png', alt: 'Yoshlar Ishlari Agentligi' },
 ];
 
 export function LogoCloud({ locale = 'uz' }: LogoCloudProps) {
@@ -29,7 +34,7 @@ export function LogoCloud({ locale = 'uz' }: LogoCloudProps) {
 
         {/* CSS-animated marquee - no JS scrollLeft needed */}
         <div className="relative overflow-hidden">
-          <div className="flex animate-scroll hover:[animation-play-state:paused]">
+          <div className="flex w-max animate-scroll hover:[animation-play-state:paused]">
             {[...companyLogos, ...companyLogos].map((logo, index) => (
               <div
                 key={index}
@@ -45,6 +50,7 @@ export function LogoCloud({ locale = 'uz' }: LogoCloudProps) {
                   alt={logo.alt}
                   fill
                   className="object-contain p-2 pointer-events-none"
+                  style={logo.alt === 'Luqmam' ? { objectPosition: 'center calc(50% + 8px)' } : undefined}
                   sizes="(max-width: 640px) 240px, (max-width: 768px) 280px, 320px"
                 />
               </div>

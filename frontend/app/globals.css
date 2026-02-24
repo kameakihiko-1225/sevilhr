@@ -177,7 +177,8 @@
 }
 
 .animate-scroll {
-  animation: scroll 30s linear infinite;
+  animation: scroll 20s linear infinite;
+  will-change: transform;
 }
 
 .animate-scroll:hover {
@@ -186,7 +187,8 @@
 
 /* Smooth scroll animation for manual + auto scroll combo */
 .animate-scroll-smooth {
-  animation: scroll 30s linear infinite;
+  animation: scroll 20s linear infinite;
+  will-change: transform;
 }
 
 .animate-scroll-smooth:hover {

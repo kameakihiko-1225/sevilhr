@@ -167,6 +167,7 @@ export async function createLead(data: CreateLeadDto): Promise<LeadResponse> {
         companyType: data.companyType || null,
         roleInCompany: data.roleInCompany || null,
         interests: data.interests || [],
+        positionToDelegate: data.positionToDelegate || null,
         companyDescription: data.companyDescription || null,
         annualTurnover: data.annualTurnover || null,
         numberOfEmployees: data.numberOfEmployees || null,

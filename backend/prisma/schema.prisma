@@ -48,6 +48,7 @@ model Lead {
   companyType        String?    @map("company_type")
   roleInCompany      String?    @map("role_in_company")
   interests          String[]   @default([])
+  positionToDelegate String?    @map("position_to_delegate")
   companyDescription String?    @map("company_description") @db.Text
   annualTurnover     String?    @map("annual_turnover")
   numberOfEmployees  String?    @map("number_of_employees")

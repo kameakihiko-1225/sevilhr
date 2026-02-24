@@ -8,6 +8,7 @@ const createLeadSchema = z.object({
   companyType: z.string().optional(),
   roleInCompany: z.string().optional(),
   interests: z.array(z.string()).optional(),
+  positionToDelegate: z.string().optional(),
   companyDescription: z.string().optional(),
   annualTurnover: z.string().optional(),
   numberOfEmployees: z.string().optional(),
@@ -15,7 +16,7 @@ const createLeadSchema = z.object({
   phoneNumber: z.string().min(9, 'Phone number must be at least 9 characters'),
   companyName: z.string().optional(),
   locale: z.enum(['uz', 'en', 'ru']).optional().default('uz'),
-  status: z.enum(['PARTIAL', 'FULL']),
+  status: z.enum(['PARTIAL', 'FULL', 'FULL_WITHOUT_TELEGRAM', 'DID_NOT_CLICK_SUBMIT_BUTTON']),
 });
 
 export function validateCreateLead(req: Request, res: Response, next: NextFunction) {

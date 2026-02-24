@@ -20,7 +20,7 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
 
   return (
     <div className="relative w-full mt-6 sm:mt-8 md:mt-10 overflow-hidden">
-      <div className="flex animate-scroll hover:[animation-play-state:paused]">
+      <div className="flex w-max animate-scroll hover:[animation-play-state:paused]">
         {duplicatedLogos.map((logo, index) => (
           <div
             key={index}
@@ -33,12 +33,8 @@ function HeroLogoCarousel({ logos }: HeroLogoCarouselProps) {
               src={logo.src}
               alt={logo.alt}
               fill
-              className={cn(
-                "object-contain pointer-events-none",
-                (logo.alt === 'MUU' || logo.alt === 'MuSchool' || logo.alt === 'Cert Main')
-                  ? "p-4 sm:p-5 md:p-6 lg:p-7 xl:p-8"
-                  : "p-3 sm:p-4 md:p-5 lg:p-6"
-              )}
+              className="object-contain pointer-events-none p-2 sm:p-3 md:p-4"
+              style={logo.alt === 'Luqmam' ? { objectPosition: 'center calc(50% + 8px)' } : undefined}
               sizes="(max-width: 480px) 96px, (max-width: 640px) 112px, (max-width: 768px) 144px, (max-width: 1024px) 160px, 192px"
             />
           </div>
@@ -90,6 +86,9 @@ export default function Hero({ locale = 'uz' }: HeroProps) {
     { src: '/companies/yosh olim.svg', alt: 'Yosh Olim', fallback: 'YO' },
     { src: '/companies/Logo white school.png', alt: 'MuSchool', fallback: 'MS' },
     { src: '/companies/Tez Go.png', alt: 'Tez Go', fallback: 'TG' },
+    { src: '/companies/picanother.png', alt: 'Luqmam', fallback: 'LQ' },
+    { src: '/companies/registon.svg', alt: 'Registon', fallback: 'RG' },
+    { src: '/companies/Yoshlar_ishlari_agentligi_logotipi.svg.png', alt: 'Yoshlar Ishlari Agentligi', fallback: 'YIA' },
   ];
 
   const headlineParts = parseHeadline(t.hero.headline, locale);

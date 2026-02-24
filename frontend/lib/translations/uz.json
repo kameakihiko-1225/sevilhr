@@ -20,11 +20,12 @@
       "1": "Korxonangiz qayerda joylashgan?",
       "2": "Korxonangiz turi qanday?",
       "3": "Korxonada o'rningiz qanaqa?",
-      "4": "Korxonangizni tasvirlang",
-      "5": "Yillik aylanma",
-      "6": "Xodimlar soni",
-      "7": "Ismingiz",
-      "8": "Telefon raqamingiz va Telegram username"
+      "4": "Qanday lavozimga xodim topishni bizga topshirmoqchisiz?",
+      "5": "Korxonangizni tasvirlang",
+      "6": "Yillik aylanma",
+      "7": "Xodimlar soni",
+      "8": "Ismingiz",
+      "9": "Telefon raqamingiz va Telegram username"
     },
     "location": {
       "label": "Korxonangiz qayerda joylashgan?",
@@ -52,6 +53,10 @@
       "hiring": "Xodim yollash xizmati",
       "customerFlow": "Mijozlar oqimini yaratish xizmati",
       "salesSystem": "Savdo bo'limini tizimlashtirish xizmati"
+    },
+    "positionToDelegate": {
+      "label": "Qanday lavozimga xodim topishni bizga topshirmoqchisiz?",
+      "placeholder": "Masalan: moliya menejeri"
     },
     "companyDescription": {
       "label": "Korxonangizni eng ko'pi bilan 1-3 ta gapda tasvirlang.",

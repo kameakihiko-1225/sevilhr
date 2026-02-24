@@ -13,6 +13,7 @@ export interface CreateLeadDto {
   companyType?: string;
   roleInCompany?: string;
   interests?: string[];
+  positionToDelegate?: string;
   companyDescription?: string;
   annualTurnover?: string;
   numberOfEmployees?: string;

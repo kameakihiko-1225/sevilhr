@@ -20,11 +20,12 @@
       "1": "Where is your company located?",
       "2": "What type is your company?",
       "3": "What is your role in the company?",
-      "4": "Describe your company",
-      "5": "Annual turnover",
-      "6": "Number of employees",
-      "7": "Your name",
-      "8": "Your phone number and Telegram username"
+      "4": "What position do you want to delegate to us?",
+      "5": "Describe your company",
+      "6": "Annual turnover",
+      "7": "Number of employees",
+      "8": "Your name",
+      "9": "Your phone number and Telegram username"
     },
     "location": {
       "label": "Where is your company located?",
@@ -52,6 +53,10 @@
       "hiring": "Staff hiring service",
       "customerFlow": "Customer flow generation service",
       "salesSystem": "Sales department systematization service"
+    },
+    "positionToDelegate": {
+      "label": "What position do you want to delegate to us?",
+      "placeholder": "e.g. finance manager"
     },
     "companyDescription": {
       "label": "Describe your company in 1-3 sentences at most.",

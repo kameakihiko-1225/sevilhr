@@ -147,6 +147,9 @@ export async function sendLeadToGroup(
   if (lead.interests && lead.interests.length > 0) {
     message += `🎯 Interests: ${lead.interests.map((i: string) => interestsMap[i] || i).join(', ')}\n`;
   }
+  if (lead.positionToDelegate) {
+    message += `🎯 Position to delegate: ${lead.positionToDelegate}\n`;
+  }
   if (lead.companyDescription) {
     message += `📝 Description: ${lead.companyDescription}\n`;
   }
@@ -304,6 +307,9 @@ export function formatRejectionMessageForGroup(
     const interestsText = lead.interests.map((i: string) => interestsMap[i] || i).join(', ');
     message += `🎯 Interests: ${escapeMarkdown(interestsText)}\n`;
   }
+  if (lead.positionToDelegate) {
+    message += `🎯 Position to delegate: ${escapeMarkdown(lead.positionToDelegate)}\n`;
+  }
   if (lead.companyDescription) {
     message += `📝 Description: ${escapeMarkdown(lead.companyDescription)}\n`;
   }
@@ -451,6 +457,9 @@ export async function updateLeadMessageWithTelegram(
   if (lead.interests && lead.interests.length > 0) {
     const interestsText = lead.interests.map((i: string) => interestsMap[i] || i).join(', ');
     message += `🎯 Interests: ${escapeMarkdown(interestsText)}\n`;
+  }
+  if (lead.positionToDelegate) {
+    message += `🎯 Position to delegate: ${escapeMarkdown(lead.positionToDelegate)}\n`;
   }
   if (lead.companyDescription) {
     message += `📝 Description: ${escapeMarkdown(lead.companyDescription)}\n`;
