@@ -72,10 +72,16 @@ export function ApplicationForm({ locale = 'uz', onSubmitSuccess }: ApplicationF
   } = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: mounted ? {
-      ...(sessionData as Partial<FormData>),
       interests: (sessionData.interests as string[]) || [],
+      positionToDelegate: (sessionData.positionToDelegate as string) || '',
+      companyDescription: (sessionData.companyDescription as string) || '',
       fullName: (sessionData.fullName as string) || '',
       phoneNumber: (sessionData.phoneNumber as string) || '',
+      companyName: (sessionData.companyName as string) || '',
+      telegramUsername: (sessionData.telegramUsername as string) || '',
+      ...(Object.fromEntries(
+        Object.entries(sessionData).filter(([, v]) => v !== undefined && v !== null && v !== '')
+      ) as Partial<FormData>),
     } : undefined,
   });
 

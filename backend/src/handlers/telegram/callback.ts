@@ -134,6 +134,9 @@ export async function handleCallback(ctx: Context, bot: Bot) {
           const interestsText = lead.interests.map((i: string) => interestsMap[i] || i).join(', ');
           message += `🎯 Interests: ${escapeMarkdown(interestsText)}\n`;
         }
+        if (lead.positionToDelegate) {
+          message += `🎯 Position to delegate: ${escapeMarkdown(lead.positionToDelegate)}\n`;
+        }
         if (lead.companyDescription) {
           message += `📝 Description: ${escapeMarkdown(lead.companyDescription)}\n`;
         }
