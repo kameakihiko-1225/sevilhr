@@ -137,34 +137,39 @@ export async function sendLeadToGroup(
     : `📋 *New Lead*`;
   
   let message = `${messagePrefix}\n\n`;
-  message += `📍 Location: ${lead.location}\n`;
+  message += `📍 Location: ${escapeMarkdown(lead.location)}\n`;
   if (lead.companyType) {
-    message += `🏢 Company Type: ${companyTypeMap[lead.companyType] || lead.companyType}\n`;
+    const companyTypeText = companyTypeMap[lead.companyType] || lead.companyType;
+    message += `🏢 Company Type: ${escapeMarkdown(companyTypeText)}\n`;
   }
   if (lead.roleInCompany) {
-    message += `👔 Role: ${roleMap[lead.roleInCompany] || lead.roleInCompany}\n`;
+    const roleText = roleMap[lead.roleInCompany] || lead.roleInCompany;
+    message += `👔 Role: ${escapeMarkdown(roleText)}\n`;
   }
   if (lead.interests && lead.interests.length > 0) {
-    message += `🎯 Interests: ${lead.interests.map((i: string) => interestsMap[i] || i).join(', ')}\n`;
+    const interestsText = lead.interests.map((i: string) => interestsMap[i] || i).join(', ');
+    message += `🎯 Interests: ${escapeMarkdown(interestsText)}\n`;
   }
   if (lead.positionToDelegate) {
-    message += `🎯 Position to delegate: ${lead.positionToDelegate}\n`;
+    message += `🎯 Position to delegate: ${escapeMarkdown(lead.positionToDelegate)}\n`;
   }
   if (lead.companyDescription) {
-    message += `📝 Description: ${lead.companyDescription}\n`;
+    message += `📝 Description: ${escapeMarkdown(lead.companyDescription)}\n`;
   }
   if (lead.annualTurnover) {
-    message += `💰 Annual Turnover: ${annualTurnoverMap[lead.annualTurnover] || lead.annualTurnover}\n`;
+    const turnoverText = annualTurnoverMap[lead.annualTurnover] || lead.annualTurnover;
+    message += `💰 Annual Turnover: ${escapeMarkdown(turnoverText)}\n`;
   }
   if (lead.numberOfEmployees) {
-    message += `👥 Employees: ${numberOfEmployeesMap[lead.numberOfEmployees] || lead.numberOfEmployees}\n`;
+    const employeesText = numberOfEmployeesMap[lead.numberOfEmployees] || lead.numberOfEmployees;
+    message += `👥 Employees: ${escapeMarkdown(employeesText)}\n`;
   }
-  message += `👤 Name: ${lead.fullName}\n`;
-  message += `📞 Phone: ${lead.phoneNumber}${telegramContact}\n`;
+  message += `👤 Name: ${escapeMarkdown(lead.fullName)}\n`;
+  message += `📞 Phone: ${escapeMarkdown(lead.phoneNumber)}${telegramContact}\n`;
   if (lead.companyName) {
-    message += `🏢 Company Name: ${lead.companyName}\n`;
+    message += `🏢 Company Name: ${escapeMarkdown(lead.companyName)}\n`;
   }
-  message += `📊 Status: ${lead.status}`;
+  message += `📊 Status: ${escapeMarkdown(lead.status)}`;
 
   // Send message with inline keyboard
   const inlineKeyboard: any[] = [
@@ -197,7 +202,7 @@ export async function sendLeadToGroup(
 
   try {
     const sentMessage = await bot.api.sendMessage(GROUP_ID, message, {
-      parse_mode: 'Markdown',
+      parse_mode: 'MarkdownV2',
       reply_markup: keyboard,
     });
 
@@ -524,7 +529,7 @@ export async function updateLeadMessageWithTelegram(
       parseInt(lead.telegramMessageId),
       message,
       {
-        parse_mode: 'Markdown',
+        parse_mode: 'MarkdownV2',
         reply_markup: keyboard,
       }
     );
