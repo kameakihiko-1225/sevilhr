@@ -33,7 +33,16 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-sans" suppressHydrationWarning>
         {children}
-        <Script id="meta-pixel" strategy="afterInteractive">
+        <Script id="fb-domain-check" strategy="afterInteractive">
+          {`
+            if (document.querySelector('meta[name="facebook-domain-verification"]')) {
+              console.log('[Facebook] Domain verification meta tag found: ' + document.querySelector('meta[name="facebook-domain-verification"]').content);
+            } else {
+              console.warn('[Facebook] Domain verification meta tag NOT found');
+            }
+          `}
+        </Script>
+        <Script id="meta-pixel" strategy="afterInteractive" onReady={() => { console.log('[Meta Pixel] Script loaded and ready') }} onError={(e: Error) => { console.error('[Meta Pixel] Failed to load:', e) }}>
           {`
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -45,6 +54,8 @@ export default function RootLayout({
             'https://connect.facebook.net/en_US/fbevents.js');
             fbq('init', '738709679302941');
             fbq('track', 'PageView');
+            console.log('[Meta Pixel] Initialized with ID: 738709679302941');
+            console.log('[Meta Pixel] PageView event tracked');
           `}
         </Script>
         <noscript>
