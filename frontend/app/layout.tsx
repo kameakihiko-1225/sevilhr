@@ -42,7 +42,7 @@ export default function RootLayout({
             }
           `}
         </Script>
-        <Script id="meta-pixel" strategy="afterInteractive" onReady={() => { console.log('[Meta Pixel] Script loaded and ready') }} onError={(e: Error) => { console.error('[Meta Pixel] Failed to load:', e) }}>
+        <Script id="meta-pixel" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)
             {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
