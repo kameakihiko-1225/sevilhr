@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Roboto_Flex } from "next/font/google";
 import Script from "next/script";
+import Image from "next/image";
 import "./globals.css";
 
 const robotoFlex = Roboto_Flex({
@@ -59,8 +60,12 @@ export default function RootLayout({
           `}
         </Script>
         <noscript>
-          <img height="1" width="1" style={{ display: 'none' }}
+          <Image
+            height={1}
+            width={1}
+            className="fb-pixel-tracker"
             src="https://www.facebook.com/tr?id=738709679302941&ev=PageView&noscript=1"
+            alt="Facebook pixel tracker"
           />
         </noscript>
       </body>
